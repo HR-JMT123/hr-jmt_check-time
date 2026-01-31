@@ -349,7 +349,7 @@
           { key: 'ขาดงาน', label: 'ขาดงาน', color: 'bg-red-600' },
           { key: 'ลางาน', label: 'ลางาน', color: 'bg-green-600' },
           { key: 'สลับวันหยุด', label: 'สลับวันหยุด', color: 'bg-indigo-500' },
-          { key: 'ทำงาน', label: 'ทำงานปกติ', color: 'bg-blue-600' },
+          { key: 'ทำงาน', label: 'ทำงานปกติ', color: 'bg-blue-600' }
       ];
       config.forEach(c => {
         const count = groupedData[c.key].length;
@@ -375,7 +375,7 @@
       let html = '';
       items.forEach((emp, i) => {
         let statusDisplay = groupKey === 'รอตรวจสอบสถานะ' ? 
-            `<select onchange="saveStatus(${emp.rowIndex}, this.value, this)" class="w-full text-xs border border-yellow-400 bg-yellow-50 text-yellow-900 rounded p-1 focus:ring-2 focus:ring-yellow-500 outline-none cursor-pointer"><option value="" disabled selected>-- เลือกสถานะ --</option><option value="ทำงาน">ทำงาน</option><option value="มาสาย">มาสาย</option><option value="ลาป่วย">ลาป่วย</option><option value="ลากิจ">ลากิจ</option><option value="ขาดงาน">ขาดงาน</option><option value="สลับวันหยุด">สลับวันหยุด</option></select>` :
+            `<select onchange="saveStatus(${emp.rowIndex}, this.value, this)" class="w-full text-xs border border-yellow-400 bg-yellow-50 text-yellow-900 rounded p-1 focus:ring-2 focus:ring-yellow-500 outline-none cursor-pointer"><option value="" disabled selected>-- เลือกสถานะ --</option><option value="ทำงาน">ทำงาน</option><option value="มาสาย">มาสาย</option><option value="ลาป่วย">ลาป่วย</option><option value="ลากิจ">ลากิจ</option><option value="ขาดงาน">ขาดงาน</option><option value="สลับวันหยุด">สลับวันหยุด</option><option value="ลาคลอด">ลาคลอด</option><option value="ลาไม่รับค่าจ้าง">ลาไม่รับค่าจ้าง</option><option value="ลาบวช">ลาบวช</option></select>` :
             `<span class="px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-600">${emp.reportIn || '-'}</span>`;
         html += `<tr class="hover:bg-blue-50 transition-colors search-row"><td class="px-4 py-2 text-center text-gray-400 text-xs">${i + 1}</td><td class="px-4 py-2 font-medium text-gray-800">${emp.name}</td><td class="px-4 py-2 text-gray-500 text-xs">${emp.dept}</td><td class="px-4 py-2 text-center font-mono text-green-600">${emp.timeIn || '--:--'}</td><td class="px-4 py-2 text-center font-mono text-red-600">${emp.timeOut || '--:--'}</td><td class="px-4 py-2">${statusDisplay}</td></tr>`;
       });
@@ -434,3 +434,4 @@
   </script>
 </body>
 </html>
+
