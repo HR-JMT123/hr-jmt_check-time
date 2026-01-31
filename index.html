@@ -1,737 +1,1420 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
+  <base target="_top">
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Time Attendance Report</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>JMT Engagement System</title>
+    
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script> 
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    
   <style>
-    body { font-family: 'Sarabun', sans-serif; background-color: #f1f5f9; }
-    
-    /* Table Styles */
-    .report-table { width: 100%; border-collapse: collapse; font-size: 12px; background-color: white; }
-    .report-table th, .report-table td { border: 1px solid #cbd5e1; padding: 6px 4px; text-align: center; }
-    .th-main { background-color: #e2e8f0; }
-    .th-blue { background-color: #bfdbfe; color: #1e3a8a; }
-    .th-red { background-color: #fecaca; color: #7f1d1d; }
-    .report-table tbody tr:hover { background-color: #f8fafc; }
-    .text-dept { text-align: left !important; padding-left: 10px !important; font-weight: 500; white-space: nowrap; }
-    .num-cell { font-variant-numeric: tabular-nums; }
-    
-    /* Animation */
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes popIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-    .login-box { animation: fadeIn 0.4s ease-out; }
-    .modal-content { animation: popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
-    
-    /* Custom Scrollbar */
-    .scrollbar-hide::-webkit-scrollbar { display: none; }
-    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-    
-    /* Error Border for Remark */
-    .input-error { border-color: #ef4444 !important; --tw-ring-color: #fecaca !important; }
+    /* =========================================
+       CORE VARIABLES & RESET
+       ========================================= */
+    :root { 
+      --primary-dark: #7f1d1d; 
+      --primary: #b91c1c; 
+      --primary-light: #ef4444;
+      --bg-body: #f8f9fc; 
+      --card-bg: #ffffff; 
+      --text-main: #334155; 
+      --text-light: #64748b;
+      --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+      
+    body { 
+      font-family: 'Sarabun', sans-serif; 
+      background-color: var(--bg-body); 
+      color: var(--text-main); 
+      -webkit-font-smoothing: antialiased;
+    }
 
-    /* SweetAlert Font */
-    div:where(.swal2-container) { font-family: 'Sarabun', sans-serif !important; }
+    /* =========================================
+       ANIMATIONS & TRANSITIONS
+       ========================================= */
+    .view-section { 
+      display: none; 
+      opacity: 0; 
+      transition: opacity 0.4s ease-in-out; 
+    }
+    .view-section.active { 
+      display: block; 
+      opacity: 1; 
+      animation: fadeIn 0.5s ease-out;
+    }
+      
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* =========================================
+       CUSTOM BUTTONS
+       ========================================= */
+    .btn {
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+      
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      filter: brightness(105%);
+    }
+      
+    .btn:active {
+      transform: translateY(0) scale(0.98);
+      box-shadow: none;
+    }
+
+    .btn-main { 
+      width: 100%; 
+      padding: 14px; 
+      border-radius: 16px; 
+      border: none; 
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); 
+      color: white; 
+      font-weight: 700; 
+      font-size: 1rem; 
+      box-shadow: 0 5px 15px rgba(185, 28, 28, 0.3); 
+      letter-spacing: 0.5px;
+    }
+      
+    .header-icon-btn { 
+      background: rgba(255, 255, 255, 0.15); 
+      border: 1px solid rgba(255, 255, 255, 0.2); 
+      color: white; 
+      border-radius: 12px; 
+      width: 55px; 
+      height: 55px; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      justify-content: center; 
+      cursor: pointer; 
+      transition: all 0.3s ease; 
+      font-size: 0.75rem; 
+      backdrop-filter: blur(4px);
+    }
+    .header-icon-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-3px) rotate(3deg);
+    }
+      
+    /* =========================================
+       LAYOUT COMPONENTS
+       ========================================= */
+    .survey-padding { padding-bottom: 80px; }
+      
+    .header-wrapper { 
+      background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%); 
+      padding: 1.5rem 1rem 3rem 1rem; 
+      border-radius: 0 0 30px 30px; 
+      box-shadow: var(--shadow-md); 
+      color: white; 
+      position: relative;
+      overflow: hidden;
+    }
+      
+    .header-wrapper::after {
+      content: '';
+      position: absolute;
+      top: -50px;
+      right: -50px;
+      width: 200px;
+      height: 200px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .app-title { font-size: 1.5rem; font-weight: 800; margin: 0; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .header-btn-group { display: flex; gap: 8px; z-index: 2; position: relative; }
+      
+    .main-container { 
+      max-width: 700px; 
+      padding: 0 15px; 
+      margin: -2rem auto 0 auto; 
+      position: relative; 
+      z-index: 10; 
+    }
+      
+    /* =========================================
+       CARDS & INPUTS
+       ========================================= */
+    .modern-card { 
+      background: var(--card-bg); 
+      border-radius: 20px; 
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04); 
+      margin-bottom: 1.2rem; 
+      border: 1px solid rgba(255,255,255,0.8); 
+      overflow: hidden; 
+      transition: transform 0.3s ease;
+    }
+
+    .search-card { 
+      background: white; 
+      border-radius: 24px; 
+      padding: 25px 20px; 
+      box-shadow: var(--shadow-lg); 
+      margin-bottom: 20px; 
+      border: 1px solid rgba(185, 28, 28, 0.1); 
+      position: relative; 
+      overflow: hidden; 
+      transition: all 0.3s ease;
+    }
+    .search-card::before { 
+      content: ''; 
+      position: absolute; 
+      left: 0; top: 0; bottom: 0; 
+      width: 6px; 
+      background: var(--primary); 
+    }
+      
+    .custom-search-group { 
+      position: relative; 
+      display: flex; 
+      align-items: center; 
+      background: #f1f5f9; 
+      border-radius: 50px; 
+      padding: 5px 5px 5px 15px; 
+      border: 2px solid transparent; 
+      transition: all 0.3s; 
+    }
+    .custom-search-group:focus-within {
+      border-color: var(--primary-light);
+      background: #fff;
+      box-shadow: 0 0 0 4px rgba(185, 28, 28, 0.1);
+    }
+      
+    .search-input { border: none; background: transparent; flex: 1; padding: 10px 0; outline: none; font-size: 1rem; color: var(--text-main); }
+    .btn-search-icon { 
+      width: 42px; height: 42px; 
+      border-radius: 50%; 
+      border: none; 
+      background: var(--primary); 
+      color: white; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      cursor: pointer; 
+      transition: transform 0.2s;
+    }
+    .btn-search-icon:hover { transform: rotate(90deg) scale(1.1); }
+      
+    .card-header-clean { 
+      padding: 16px 20px; 
+      border-bottom: 1px solid #f1f5f9; 
+      font-weight: 700; 
+      color: var(--primary-dark); 
+      display: flex; 
+      gap: 10px; 
+      align-items: center;
+      background: rgba(248,250,252,0.5);
+    }
+    .card-body-clean { padding: 20px; }
+      
+    /* =========================================
+       SURVEY QUESTIONS UI
+       ========================================= */
+    .audit-row { padding: 16px 0; border-bottom: 1px solid #f1f5f9; border-radius: 8px; }
+    .audit-title { font-weight: 600; margin-bottom: 12px; font-size: 0.95rem; line-height: 1.4; }
+    .score-group { display: flex; gap: 4px; }
+    .score-radio { display: none; }
+    .score-btn { 
+      flex: 1; 
+      text-align: center; 
+      padding: 8px 4px; 
+      border-radius: 8px; 
+      border: 1px solid #e2e8f0; 
+      background: white; 
+      cursor: pointer; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      justify-content: center; 
+      min-height: 50px; 
+      transition: all 0.2s;
+    }
+    .score-btn:hover { background: #f8fafc; border-color: #cbd5e1; }
+      
+    .score-val { font-size: 1.1rem; font-weight: 700; line-height: 1; }
+    .score-sub { font-size: 0.6rem; margin-top: 2px; opacity: 0.7; white-space: nowrap; }
+      
+    .score-radio[value="1"]:checked + .score-btn { background: #fee2e2; color: #991b1b; border-color: #fca5a5; transform: scale(1.05); font-weight: bold; }
+    .score-radio[value="2"]:checked + .score-btn { background: #fff1f2; color: #be123c; border-color: #fda4af; transform: scale(1.05); font-weight: bold; }
+    .score-radio[value="3"]:checked + .score-btn { background: #fffbeb; color: #92400e; border-color: #fcd34d; transform: scale(1.05); font-weight: bold; }
+    .score-radio[value="4"]:checked + .score-btn { background: #f0fdf4; color: #15803d; border-color: #86efac; transform: scale(1.05); font-weight: bold; }
+    .score-radio[value="5"]:checked + .score-btn { background: #dcfce7; color: #14532d; border-color: #22c55e; transform: scale(1.05); font-weight: bold; }
+      
+    .missing-alert { 
+      background-color: #fff5f5; 
+      border: 2px solid #ef4444 !important; 
+      padding: 10px; 
+      animation: pulseAlert 1s infinite; 
+    }
+    @keyframes pulseAlert { 
+      0% { border-color: #ef4444; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 
+      70% { border-color: #fca5a5; box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); } 
+      100% { border-color: #ef4444; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } 
+    }
+      
+    /* =========================================
+       CUSTOM ALERT & OVERLAY
+       ========================================= */
+    .custom-alert-overlay { 
+        position: fixed; 
+        top: 0; left: 0; 
+        width: 100%; height: 100%; 
+        background: rgba(0,0,0,0.5); 
+        z-index: 10050; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        opacity: 0; 
+        visibility: hidden; 
+        transition: all 0.3s ease; 
+        backdrop-filter: blur(4px); 
+    }
+    .custom-alert-box { 
+        background: white; 
+        padding: 30px 25px; 
+        border-radius: 24px; 
+        text-align: center; 
+        width: 85%; 
+        max-width: 340px; 
+        position: relative; 
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        transform: scale(0.7); 
+        opacity: 0; 
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+    }
+    .custom-alert-overlay.active { opacity: 1; visibility: visible; }
+    .custom-alert-overlay.active .custom-alert-box { transform: scale(1); opacity: 1; }
+      
+    .status-circle { width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto; font-size: 36px; }
+    .success-circle { background: #dcfce7; color: #166534; }
+    .error-circle { background: #fee2e2; color: #991b1b; }
+    .warning-circle { background: #fff7ed; color: #d97706; }
+    .info-circle { background: #e0f2fe; color: #0284c7; }
+
+    /* =========================================
+       DASHBOARD STYLES
+       ========================================= */
+    .dashboard-container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+      
+    .report-header-dash { 
+      background: white; 
+      border-radius: 16px; 
+      padding: 20px; 
+      box-shadow: var(--shadow-sm); 
+      margin-bottom: 20px; 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      flex-wrap: wrap; 
+      gap: 15px; 
+    }
+      
+    .stat-card { 
+      background: white; 
+      border-radius: 16px; 
+      padding: 20px; 
+      box-shadow: var(--shadow-sm); 
+      border: 1px solid rgba(255,255,255,0.8); 
+      height: 100%; 
+      transition: transform 0.2s; 
+      position: relative; 
+    }
+    .stat-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); }
+      
+    .stat-icon { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 10px; }
+    .bg-icon-red { background: #fee2e2; color: #b91c1c; }
+    .bg-icon-blue { background: #e0f2fe; color: #0284c7; }
+    .bg-icon-green { background: #dcfce7; color: #166534; }
+      
+    .table-card { background: white; border-radius: 16px; padding: 20px; box-shadow: var(--shadow-sm); overflow: hidden; }
+    .table thead th { background-color: #f8fafc; font-weight: 600; font-size: 0.9rem; color: #64748b; border-bottom: 2px solid #e2e8f0; }
+      
+    .badge-grade-good { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .badge-grade-improve { background-color: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
+    .badge-grade-urgent { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+
+    .password-group { position: relative; }
+    .password-toggle { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #6c757d; }
+      
+    /* =========================================
+       SCORE BOX STYLE (NEW STATIC & COMPACT)
+       ========================================= */
+    .static-score-box {
+        position: relative; /* ยกเลิก Fixed Position */
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-left: 5px solid var(--primary); /* แถบสีด้านซ้าย */
+        border-radius: 12px; /* มุมมนน้อยกว่าการ์ดปกตินิดหน่อย */
+        margin-bottom: 15px; /* เว้นระยะห่างจากปุ่ม */
+        padding: 10px 15px; /* Compact padding เพื่อให้ดูแบน */
+        box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+
+    /* ซ่อนเมื่อไม่ใช่หน้าทำแบบสอบถาม */
+    .static-score-box.hidden {
+        display: none !important;
+    }
+
+    /* =========================================
+       CUSTOM DROPDOWN FOR MULTI-SELECT (แก้ไขตามสั่ง)
+       ========================================= */
+    .dropdown-menu-scrollable {
+        max-height: 250px;
+        overflow-y: auto;
+        min-width: 100%;
+        padding: 10px;
+    }
+    .dropdown-item-text {
+        padding: 4px 8px;
+    }
+    .custom-dropdown-btn {
+        text-align: left;
+        background-color: white;
+        border: 1px solid #dee2e6;
+        color: #333;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .custom-dropdown-btn::after {
+        margin-left: auto;
+    }
+
+    @media print {
+       .no-print { display: none !important; }
+       .report-header-dash { padding: 0; margin-bottom: 1rem; box-shadow: none; }
+       .static-score-box { display: none !important; }
+    }
   </style>
 </head>
-<body class="min-h-screen">
+<body>
 
-  <div id="loginSection" class="flex flex-col items-center justify-center min-h-screen p-4">
-    <div class="login-box bg-white p-8 rounded-xl shadow-2xl w-full max-w-sm border border-gray-200">
-      <div class="text-center mb-6">
-        <h1 class="text-2xl font-bold text-gray-800">ระบบรายงานเวลา HR</h1>
-        <p class="text-gray-500 text-sm mt-1">กรุณายืนยันตัวตนเพื่อเข้าใช้งาน</p>
+  <div id="loadingOverlay" style="position:fixed; inset:0; z-index:10000; background:rgba(255,255,255,0.95); display:none; flex-direction:column; align-items:center; justify-content:center;">
+    <div class="spinner-border text-danger mb-3" role="status"></div>
+    <div class="text-secondary fw-bold small" id="loadingText">กำลังดำเนินการ...</div>
+  </div>
+
+  <div id="customAlertOverlay" class="custom-alert-overlay">
+      <div class="custom-alert-box">
+          <div style="position:absolute; top:15px; right:15px; cursor:pointer;" onclick="closeCustomAlert()">
+             <i class="bi bi-x-lg text-secondary"></i>
+          </div>
+          <div id="alertIcon" class="status-circle success-circle"></div>
+          <h5 class="fw-bold mb-1" id="alertTitle">แจ้งเตือน</h5>
+          <div class="text-muted small mb-3" id="alertText">รายละเอียด</div>
+          <button id="alertCloseBtn" class="btn btn-light rounded-pill w-100 mt-2" onclick="closeCustomAlert()">ตกลง</button>
       </div>
-      <div class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">รหัสพนักงาน (Employee ID)</label>
-          <input type="password" id="empCode" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="ระบุรหัสพนักงาน...">
+  </div>
+
+  <div id="confirmOverlay" class="custom-alert-overlay">
+      <div class="custom-alert-box">
+          <div class="status-circle warning-circle">
+              <i class="bi bi-question-lg"></i>
+          </div>
+          <h5 class="fw-bold mb-1">ยืนยันข้อมูล?</h5>
+          <div class="text-muted small">ต้องการส่งผลการสำรวจใช่หรือไม่</div>
+          <div class="d-flex gap-2 mt-3">
+              <button type="button" class="btn btn-outline-secondary rounded-pill flex-fill" onclick="closeConfirmBox()">ยกเลิก</button>
+              <button type="button" class="btn btn-danger rounded-pill flex-fill" onclick="processRealSubmit()">ยืนยันส่ง</button>
+          </div>
+      </div>
+  </div>
+
+  <div class="modal fade" id="passwordModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content rounded-4 border-0 shadow-lg">
+        <div class="modal-header border-0">
+           <h5 class="modal-title fw-bold text-danger"><i class="bi bi-shield-lock-fill me-2"></i>เข้าสู่ระบบรายงาน (HR)</h5>
+           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
-        <button onclick="handleLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg shadow-md transition-colors flex justify-center items-center">
-          <span id="btnText">เข้าสู่ระบบ</span>
-          <svg id="btnSpinner" class="animate-spin ml-2 h-4 w-4 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-        </button>
+        <div class="modal-body p-4 pt-0">
+           <div class="mb-3">
+              <label class="form-label small text-muted">รหัสผ่าน</label>
+              <div class="password-group">
+                  <input type="password" class="form-control text-center rounded-pill" id="hrPassword" placeholder="ระบุรหัสผ่าน">
+                  <i class="bi bi-eye-slash password-toggle" id="togglePassword" onclick="togglePass()"></i>
+              </div>
+           </div>
+           <button class="btn btn-danger w-100 rounded-pill shadow-sm" onclick="checkPassword()">
+             <i class="bi bi-box-arrow-in-right me-2"></i>เข้าดูรายงาน
+           </button>
+        </div>
       </div>
-      <div class="mt-6 text-center text-xs text-gray-400">Internal Use Only</div>
     </div>
   </div>
 
-  <div id="appSection" class="hidden p-4 md:p-6 max-w-[1800px] mx-auto space-y-6">
-    
-    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
-      <div>
-        <h1 class="text-2xl font-bold text-gray-800">รายงาน % สูญเสียเวลาการทำงาน</h1>
-        <p class="text-sm text-gray-500 mt-1">ข้อมูล Time Attendance แยกตามส่วนงาน</p>
-      </div>
-      <div class="flex items-center gap-2 bg-gray-50 p-2 rounded-lg border border-gray-200 shadow-sm">
-        <label for="datePicker" class="text-sm font-semibold text-gray-700 pl-2">เลือกวันที่:</label>
-        <input type="date" id="datePicker" class="border border-gray-300 rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-        <button onclick="loadReport()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-1.5 rounded text-sm transition-colors shadow-sm">ค้นหา</button>
+  <div id="view-survey" class="view-section active survey-padding">
+    <div class="header-wrapper">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h1 class="app-title">ENGAGEMENT SURVEY</h1>
+          <div style="font-size: 0.85rem; opacity: 0.85;">แบบสำรวจความผูกพันพนักงาน</div>
+        </div>
+        <div class="header-btn-group">
+            <div class="header-icon-btn" onclick="openReportLogin()">
+              <i class="bi bi-file-earmark-bar-graph fs-5"></i><span>รายงาน</span>
+            </div>
+            <div class="header-icon-btn" onclick="showManual()">
+              <i class="bi bi-book fs-5"></i><span>เกณฑ์</span>
+            </div>
+        </div>
       </div>
     </div>
 
-    <div class="flex space-x-2 bg-gray-100 p-1.5 rounded-lg w-fit border border-gray-200">
-      <button onclick="switchTab('summary')" id="tabSummary" class="px-6 py-2 rounded-md text-sm font-bold shadow-sm bg-white text-blue-700 border border-gray-200 transition-all flex items-center">
-        สรุปภาพรวม (Summary)
-      </button>
-      <button onclick="switchTab('detail')" id="tabDetail" class="px-6 py-2 rounded-md text-sm font-bold text-gray-500 hover:bg-gray-200 hover:text-gray-700 transition-all flex items-center">
-        ข้อมูลพนักงาน (Detail)
-      </button>
-    </div>
+    <div class="main-container">
+      <form id="mainForm" onsubmit="submitForm(event)">
+        <div class="search-card">
+          <div class="d-flex align-items-center mb-3">
+                <i class="bi bi-search text-danger fs-5 me-2"></i>
+                <h5 class="m-0 fw-bold text-secondary">ค้นหาข้อมูลพนักงาน</h5>
+          </div>
+          <div class="custom-search-group">
+              <input type="text" class="search-input" id="searchKey" 
+                     placeholder="ระบุรหัสพนักงาน..." 
+                     onkeydown="if(event.key === 'Enter'){event.preventDefault(); searchStaff();}">
+              <button type="button" class="btn-search-icon" onclick="searchStaff()">
+                  <i class="bi bi-search"></i>
+              </button>
+          </div>
+          <div class="status-box" id="searchStatusBox" style="display:none; margin-top: 15px; background: #d1e7dd; color: #0f5132; padding: 10px; border-radius: 10px; align-items: center; gap: 10px; animation: fadeIn 0.5s;">
+              <i class="bi bi-check-circle-fill fs-4"></i>
+              <div>
+                  <div class="fw-bold">พบข้อมูลพนักงาน</div>
+                  <div class="small text-success" id="foundNameText">ระบบดึงข้อมูลลงแบบฟอร์มแล้ว</div>
+              </div>
+          </div>
+        </div>
 
-    <div id="loading" class="hidden py-12 text-center">
-      <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-gray-200 border-t-blue-600"></div>
-      <p class="mt-3 text-gray-500 font-medium">กำลังประมวลผลข้อมูล...</p>
+        <div class="modern-card" id="employeeInfoCard" style="display:none;">
+          <div class="card-header-clean"><i class="bi bi-person-circle fs-5"></i> ข้อมูลพนักงาน</div>
+          <div class="card-body-clean">
+            <div class="row g-3 mb-3">
+               <div class="col-6"><label class="form-label small text-muted fw-bold">รหัสพนักงาน</label><input type="text" class="form-control" id="empId" readonly placeholder="Auto"></div>
+               <div class="col-6"><label class="form-label small text-muted fw-bold">ตำแหน่ง</label><input type="text" class="form-control" id="position" readonly placeholder="Auto"></div>
+            </div>
+            <div class="mb-3"><label class="form-label small text-muted fw-bold">ชื่อ-นามสกุล</label><input type="text" class="form-control" id="inspector" readonly placeholder="Auto"></div>
+            <div class="row g-3 mb-3">
+              <div class="col-6"><label class="form-label small text-muted fw-bold">แผนก</label><input type="text" class="form-control" id="department" readonly placeholder="Auto"></div>
+              <div class="col-6"><label class="form-label small text-muted fw-bold">วันที่เริ่มงาน</label><input type="text" class="form-control" id="startDate" readonly placeholder="Auto"></div>
+            </div>
+            <div class="row g-3 mb-3">
+              <div class="col-6"><label class="form-label small text-muted fw-bold">สังกัด</label><input type="text" class="form-control" id="affiliation" readonly placeholder="Auto"></div>
+              <div class="col-6"><label class="form-label small text-muted fw-bold">สาขา</label><input type="text" class="form-control" id="branch" readonly placeholder="Auto"></div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label small text-muted fw-bold">วันที่ทำรายการ (อัตโนมัติ)</label>
+                <input type="date" class="form-control" id="inspectDate" readonly>
+            </div>
+          </div>
+        </div>
+
+        <div class="modern-card mb-4" style="background: #f0f9ff; border: 1px solid #bae6fd;">
+            <div class="card-body-clean">
+              <div class="d-flex gap-3">
+                <div class="text-primary pt-1"><i class="bi bi-info-circle-fill fs-4"></i></div>
+                <div class="w-100">
+                  <h5 class="fw-bold text-primary mb-2">คำชี้แจง</h5>
+                  <p class="mb-3 text-secondary small">
+                    โปรดเลือกคะแนนที่ตรงกับความรู้สึกของท่านมากที่สุด โดยมีเกณฑ์การประเมินดังนี้:
+                  </p>
+                  <div class="p-3 bg-white rounded-4 border mb-3">
+                      <h6 class="fw-bold small text-muted mb-2"><i class="bi bi-bar-chart-line"></i> เกณฑ์คะแนน (Score %)</h6>
+                      <div class="d-flex flex-wrap gap-2 small fw-bold">
+                          <span class="badge bg-success bg-opacity-10 text-success border border-success px-3 py-2">ดีเยี่ยม (ผูกพันสูง) ≥ 80%</span>
+                          <span class="badge bg-primary bg-opacity-10 text-primary border border-primary px-3 py-2">ดี (ผูกพัน) 75-79%</span>
+                          <span class="badge bg-warning bg-opacity-10 text-dark border border-warning px-3 py-2">เฝ้าระวัง 65-74%</span>
+                          <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary px-3 py-2">เสี่ยง 55-64%</span>
+                          <span class="badge bg-danger bg-opacity-10 text-danger border border-danger px-3 py-2">วิกฤต < 55%</span>
+                      </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+           
+          <div id="questionsContainer"></div>
+
+        <div class="modern-card">
+            <div class="card-header-clean"><i class="bi bi-chat-text-fill text-danger fs-5"></i> ข้อเสนอแนะอื่นๆ (ทั่วไป)</div>
+            <div class="card-body-clean">
+                <textarea class="form-control bg-light" id="note_improvement" rows="3" placeholder="ระบุความคิดเห็นภาพรวม..."></textarea>
+            </div>
+        </div>
+
+        <div id="floatingScore" class="static-score-box hidden">
+             <div class="d-flex justify-content-between align-items-center">
+                 <div class="d-flex align-items-center gap-2">
+                     <span class="badge bg-danger rounded-pill">คะแนนรวม</span>
+                     <span class="fw-bold text-primary fs-4" id="liveScoreDisplay">0</span>
+                     <span class="text-muted small">คะแนน</span>
+                 </div>
+                 <div class="text-end">
+                     <span id="scoreResult" class="fw-bold small" style="display:none">รอผล</span>
+                     <span id="percentText" class="small text-muted fw-bold" style="font-size: 1.1rem;">(0%)</span>
+                 </div>
+             </div>
+             <div class="progress mt-2" style="height: 6px;">
+                <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+             </div>
+             <span id="scoreNum" style="display:none">0</span>
+        </div>
+        <div class="btn-main-container">
+           <button type="submit" class="btn-main" id="submitBtn">ยืนยันผลการสำรวจ</button>
+        </div>
+      </form>
     </div>
-    
-    <div id="savingOverlay" class="fixed inset-0 bg-black bg-opacity-40 z-[70] hidden flex items-center justify-center backdrop-blur-sm transition-all">
-      <div class="bg-white p-5 rounded-xl shadow-2xl flex items-center gap-4 border border-gray-100">
-         <div class="animate-spin rounded-full h-8 w-8 border-4 border-blue-100 border-t-blue-600"></div>
-         <div>
-             <p class="font-bold text-gray-800">กำลังบันทึกข้อมูล...</p>
-             <p class="text-xs text-gray-500">กรุณารอสักครู่</p>
+  </div>
+
+  <div id="view-dashboard" class="view-section">
+      <div class="dashboard-container">
+         <div class="report-header-dash no-print">
+            <div>
+               <h2 class="fw-bold m-0 text-danger"><i class="bi bi-bar-chart-fill me-2"></i>Dashboard Report</h2>
+               <p class="m-0 text-muted">รายงานผลการสำรวจความผูกพัน (Real-time)</p>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary fw-bold shadow-sm" onclick="switchToSurvey()"><i class="bi bi-arrow-left-circle-fill"></i> กลับ</button>
+                <button class="btn btn-primary fw-bold shadow-sm" onclick="fetchReportData()"><i class="bi bi-arrow-clockwise"></i> อัปเดต</button>
+                <button class="btn btn-dark fw-bold shadow-sm" onclick="window.print()"><i class="bi bi-printer-fill"></i> Print</button>
+                <button class="btn btn-success fw-bold shadow-sm" onclick="exportXLSX()"><i class="bi bi-file-earmark-excel-fill"></i> Excel</button>
+            </div>
+         </div>
+
+         <div class="card border-0 shadow-sm rounded-4 mb-4 p-3 no-print">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-2"><label class="form-label small text-muted fw-bold">วันที่เริ่มต้น</label><input type="date" class="form-control rounded-pill" id="filterStartDate"></div>
+                <div class="col-md-2"><label class="form-label small text-muted fw-bold">วันที่สิ้นสุด</label><input type="date" class="form-control rounded-pill" id="filterEndDate"></div>
+                
+                <div class="col-md-3">
+                    <label class="form-label small text-muted fw-bold">แผนก</label>
+                    <div id="filterDeptContainer" class="dropdown"></div>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small text-muted fw-bold">สาขา</label>
+                    <div id="filterBranchContainer" class="dropdown"></div>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small text-muted fw-bold">ตำแหน่ง</label>
+                    <div id="filterPositionContainer" class="dropdown"></div>
+                </div>
+
+                <div class="col-md-1"><button class="btn btn-danger w-100 rounded-pill fw-bold" onclick="applyFilters()"><i class="bi bi-search"></i></button></div>
+            </div>
+         </div>
+
+         <div class="row g-3 mb-4">
+            <div class="col-md-3"><div class="stat-card"><div class="stat-icon bg-icon-blue"><i class="bi bi-people-fill"></i></div><div class="text-muted small">จำนวนผู้ทำแบบสำรวจ</div><div class="h2 fw-bold mb-0" id="valTotalCount">0</div><div class="text-muted small">คน</div></div></div>
+            <div class="col-md-3"><div class="stat-card"><div class="stat-icon bg-icon-red"><i class="bi bi-star-fill"></i></div><div class="text-muted small">คะแนนเฉลี่ยรวม</div><div class="h2 fw-bold mb-0" id="valAvgScore">0.00</div><div class="text-muted small">คะแนน</div></div></div>
+            <div class="col-md-3"><div class="stat-card"><div class="stat-icon bg-icon-green"><i class="bi bi-percent"></i></div><div class="text-muted small">เปอร์เซ็นต์เฉลี่ย</div><div class="h2 fw-bold mb-0" id="valAvgPercent">0%</div><div class="text-muted small">ภาพรวมองค์กร</div></div></div>
+            <div class="col-md-3">
+                <div class="stat-card p-2 d-flex flex-column align-items-center justify-content-center">
+                    <h6 class="fw-bold mb-2 small text-secondary">สัดส่วนคะแนน (กดเพื่อดูรายละเอียด)</h6>
+                    <div style="height: 120px; width: 100%;"><canvas id="gradeChart"></canvas></div>
+                </div>
+            </div>
+         </div>
+
+         <div class="row g-3 mb-4">
+            <div class="col-12">
+                <div class="stat-card">
+                    <h5 class="fw-bold mb-3">แนวโน้มคะแนนรายเดือน (Monthly Trend)</h5>
+                    <div style="height: 320px;"><canvas id="trendChart"></canvas></div>
+                </div>
+            </div>
+         </div>
+         
+         <div class="row g-3 mb-4">
+             <div class="col-12">
+                 <div class="stat-card">
+                     <h5 class="fw-bold mb-3">ผลการประเมินแยกตามสาขา (Branch Performance)</h5>
+                     <div style="height: 350px;"><canvas id="branchChart"></canvas></div>
+                 </div>
+             </div>
+         </div>
+
+         <div class="table-card">
+            <h5 class="fw-bold mb-3 text-danger"><i class="bi bi-table"></i> รายการข้อมูลทั้งหมด</h5>
+            <div class="table-responsive">
+               <table id="dataTable" class="table table-hover align-middle w-100">
+                 <thead><tr><th>วันที่ประเมิน</th><th>ชื่อพนักงาน</th><th>สาขา</th><th>คะแนน</th><th>เกรด</th><th>ข้อเสนอแนะ</th></tr></thead>
+                 <tbody id="tableBody"></tbody>
+               </table>
+            </div>
          </div>
       </div>
-    </div>
-
-    <div id="customConfirmModal" class="fixed inset-0 bg-slate-900 bg-opacity-40 z-[60] hidden flex items-center justify-center backdrop-blur-sm transition-opacity">
-        <div class="modal-content bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm border border-gray-100">
-            <div class="text-center">
-                <div class="mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-blue-50 mb-4 ring-4 ring-blue-50/50">
-                    <svg class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                    </svg>
-                </div>
-                
-                <h3 class="text-xl font-bold text-gray-800" id="confirmTitle">ยืนยันการบันทึก</h3>
-                <div class="mt-2">
-                    <p class="text-sm text-gray-500" id="confirmMessage">
-                        คุณต้องการเปลี่ยนสถานะเป็น <br> <span class="font-bold text-blue-600 text-lg" id="confirmStatusText"></span> <br> ใช่หรือไม่?
-                    </p>
-                </div>
-
-                <div class="mt-4 text-left">
-                    <label class="text-xs font-semibold text-gray-600 ml-1">หมายเหตุ (Remark): <span class="text-red-500">*จำเป็นต้องระบุ</span></label>
-                    <textarea id="remarkInput" rows="2" 
-                        class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-                        placeholder="ระบุเหตุผล หรือรายละเอียดเพิ่มเติม..."></textarea>
-                    <p id="remarkError" class="hidden text-xs text-red-500 mt-1 pl-1">⚠ กรุณากรอกหมายเหตุ</p>
-                </div>
-
-            </div>
-            
-            <div class="mt-6 flex gap-3">
-                <button onclick="closeConfirmModal()" class="flex-1 px-4 py-2.5 bg-white text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 font-semibold text-sm transition-colors focus:ring-2 focus:ring-gray-200">
-                    ยกเลิก
-                </button>
-                <button onclick="executeStatusUpdate()" class="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-semibold text-sm shadow-md shadow-blue-200 transition-all transform hover:scale-[1.02]">
-                    ยืนยัน
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <div id="pageSummary" class="block space-y-4 animate-[fadeIn_0.3s_ease-out]">
-      <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
-        <div class="p-4 border-b border-gray-200 bg-blue-50">
-          <h2 class="font-bold text-lg text-blue-900">ตารางแสดงสถิติพนักงานประจำวัน</h2>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="report-table">
-            <thead>
-              <tr>
-                <th rowspan="2" class="w-10 th-main">ลำดับ</th>
-                <th rowspan="2" class="w-56 th-main">ส่วนงาน</th>
-                <th rowspan="2" class="w-16 th-main font-bold">จำนวน<br>(คน)</th>
-                <th colspan="8" class="th-blue font-bold border-b-2 border-blue-300">ข้อมูลสถิติ (คน)</th>
-                <th colspan="8" class="th-red font-bold border-b-2 border-red-300">% สูญเสียเทียบกับจำนวนพนักงาน</th>
-              </tr>
-              <tr>
-                <th class="bg-blue-50 text-xs">ขาดงาน</th>
-                <th class="bg-blue-50 text-xs">มาสาย</th>
-                <th class="bg-blue-50 text-xs">ลาป่วย</th>
-                <th class="bg-blue-50 text-xs">ลากิจ</th>
-                <th class="bg-blue-50 text-xs">พักร้อน</th>
-                <th class="bg-blue-50 text-xs">สลับวันหยุด</th>
-                <th class="bg-blue-50 text-xs">ไม่แจ้งข้อมูล</th>
-                <th class="bg-blue-100 text-sm font-bold text-blue-900">Total</th>
-
-                <th class="bg-red-50 text-xs">ขาดงาน</th>
-                <th class="bg-red-50 text-xs">มาสาย</th>
-                <th class="bg-red-50 text-xs">ลาป่วย</th>
-                <th class="bg-red-50 text-xs">ลากิจ</th>
-                <th class="bg-red-50 text-xs">พักร้อน</th>
-                <th class="bg-red-50 text-xs">สลับวันหยุด</th>
-                <th class="bg-red-50 text-xs">ไม่แจ้งข้อมูล</th>
-                <th class="bg-red-100 text-sm font-bold text-red-900">Total %</th>
-              </tr>
-            </thead>
-            <tbody id="tableBody"></tbody>
-            <tfoot id="tableFooter" class="bg-gray-100 font-bold border-t-2 border-gray-300"></tfoot>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <div id="pageDetail" class="hidden space-y-4 animate-[fadeIn_0.3s_ease-out]">
-      <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
-        
-        <div id="filterBar" class="flex gap-3 overflow-x-auto pb-2 scrollbar-hide mb-2"></div>
-
-        <div class="flex flex-col sm:flex-row justify-between items-center gap-3 mb-4 bg-gray-50 p-3 rounded-lg border border-gray-200">
-           <h2 id="currentGroupTitle" class="font-bold text-lg text-gray-700">รายการข้อมูล</h2>
-           <div class="relative w-full sm:w-64">
-             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-             </div>
-             <input type="text" id="searchInput" placeholder="ค้นหาชื่อ หรือ แผนก..." class="pl-9 pr-4 py-2 border border-gray-300 rounded-lg w-full text-sm focus:ring-2 focus:ring-blue-200 outline-none transition">
-           </div>
-        </div>
-        
-        <div class="overflow-x-auto min-h-[300px]">
-           <table class="w-full text-sm text-left border-collapse">
-             <thead class="bg-gray-800 text-white uppercase text-xs sticky top-0 z-10">
-               <tr>
-                 <th class="px-4 py-3 text-center w-16">#</th>
-                 <th class="px-4 py-3">ชื่อ-นามสกุล</th>
-                 <th class="px-4 py-3">แผนก</th>
-                 <th class="px-4 py-3 text-center">Time In</th>
-                 <th class="px-4 py-3 text-center">Time Out</th>
-                 <th class="px-4 py-3 w-48">สถานะ (Report In)</th>
-               </tr>
-             </thead>
-             <tbody id="detailTableBody" class="divide-y divide-gray-200 bg-white"></tbody>
-           </table>
-        </div>
-        
-        <div class="p-2 bg-gray-50 text-xs text-gray-500 text-center border-t border-gray-200 mt-2" id="detailCount"></div>
-      </div>
-    </div>
-
   </div>
 
+  <div class="modal fade" id="manualModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content rounded-4 border-0">
+        <div class="modal-header border-0 pb-0">
+            <h5 class="modal-title fw-bold">คู่มือและเกณฑ์</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+            <div class="alert alert-primary"><strong>วิธีใช้งาน:</strong> กรอกรหัส > ให้คะแนน > กดส่ง</div>
+            <h6>เกณฑ์คะแนน (Score %)</h6>
+            <ul class="list-group list-group-flush small">
+                <li class="list-group-item d-flex justify-content-between"><span>ดีเยี่ยม (Excellent)</span><span class="badge bg-success">≥ 80%</span></li>
+                <li class="list-group-item d-flex justify-content-between"><span>ดี (Good)</span><span class="badge bg-primary">75-79%</span></li>
+                <li class="list-group-item d-flex justify-content-between"><span>เฝ้าระวัง (Watchlist)</span><span class="badge bg-warning text-dark">65-74%</span></li>
+                <li class="list-group-item d-flex justify-content-between"><span>เสี่ยง (Risk)</span><span class="badge bg-secondary">55-64%</span></li>
+                <li class="list-group-item d-flex justify-content-between"><span>วิกฤต (Critical)</span><span class="badge bg-danger">< 55%</span></li>
+            </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
   <script>
-    // ************************************************************
-    //  !!! อย่าลืมใส่ URL ของ Web App ที่ได้จาก Google Apps Script ตรงนี้ !!!
-    // ************************************************************
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbywKWNz1W35NDpjpzkA4NqmbUIdzCNClEKlXtejPh0XDLlfgg5YVJbfKzilisV-8B0u/exec'; 
+    // ** ใส่ API URL ของคุณตรงนี้ **
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwFUJCY0IrD2iSKppq93nXUezcO2kgC0ISW1_tj8B_eINIkMxycQgNij9ybAevV93WtEg/exec'; 
 
-    // --- Helper Function for API Call ---
-    async function callApi(action, payload = {}) {
-        const response = await fetch(APPS_SCRIPT_URL, {
-            method: 'POST',
-            body: JSON.stringify({ action, ...payload })
+    async function runApi(action, payload = {}) {
+        return new Promise((resolve, reject) => {
+            if (typeof google !== 'undefined' && google.script && google.script.run) {
+                google.script.run
+                    .withSuccessHandler(res => resolve(res))
+                    .withFailureHandler(err => reject(err))
+                    [action](action === 'processForm' ? payload : (payload.keyword || payload));
+            } else {
+                if(API_URL.includes('XXXX')) { alert('กรุณาใส่ API URL ใน Code ก่อนใช้งาน'); reject('API URL Missing'); return; }
+                const body = { action: action, ...payload };
+                fetch(API_URL, { method: 'POST', body: JSON.stringify(body) })
+                .then(response => response.json())
+                .then(data => resolve(data))
+                .catch(error => { console.error('API Error:', error); reject(error); });
+            }
         });
-        const result = await response.json();
-        if (result.status === 'error') throw new Error(result.message);
-        return result.data;
     }
+      
+    // Config Questions
+    const categories = [
+      { id: 'cat1', title: '1. Work & Role (งานและบทบาท)', items: ['1. งานที่ทำชัดเจน เข้าใจเป้าหมาย (KPI)','2. ปริมาณงานเหมาะสม','3. งานมีความหมาย','4. รู้สึกภูมิใจในงาน']},
+      { id: 'cat2', title: '2. Leadership (ภาวะผู้นำ)', items: ['5. หัวหน้างานรับฟัง','6. ให้คำแนะนำ / Coaching','7. ตัดสินใจยุติธรรม','8. ดูแลทีมจริง']},
+      { id: 'cat3', title: '3. Career & Growth (ความก้าวหน้า)', items: ['9. เห็นโอกาสเติบโต','10. ได้พัฒนาทักษะ','11. มี Career Path']},
+      { id: 'cat4', title: '4. Compensation & Welfare (ผลตอบแทน)', items: ['12. เงินเดือนเหมาะสม','13. สวัสดิการตอบโจทย์','14. รู้สึกว่าบริษัทดูแล']},
+      { id: 'cat5', title: '5. Environment & Culture (บรรยากาศ)', items: ['15. บรรยากาศดี','16. เพื่อนร่วมงานช่วยเหลือ','17. วัฒนธรรมตรงค่านิยม']},
+      { id: 'cat6', title: '6. Communication & Direction (ทิศทาง)', items: ['18. เข้าใจเป้าหมายและทิศทางขององค์กร','19. ได้รับข้อมูลข่าวสารที่ชัดเจน ทันเวลา','20. รู้สึกว่าความเห็นของพนักงานถูกรับฟัง']}
+    ];
+      
+    let allReportData = [];
+    let allBranchTotals = {}; 
+    let trendChartInstance = null;
+    let gradeChartInstance = null;
+    let branchChartInstance = null;
+    let dataTableInstance = null;
+    let searchTimer;
+    let currentFilteredData = [];
 
-    // --- Global Variables ---
-    let globalDetails = [];
-    let groupedData = {};
-    let currentActiveGroup = 'รอตรวจสอบสถานะ';
-    
-    // Global vars for Modal
-    let pendingRowIndex = null;
-    let pendingStatusValue = null;
-    let pendingSelectElement = null; 
+    // --- On Load ---
+    document.addEventListener('DOMContentLoaded', () => {
+        renderQuestions();
+        // ข้อ 1: กำหนดค่าวันที่ปัจจุบันเสมอเมื่อโหลด
+        document.getElementById('inspectDate').valueAsDate = new Date();
+        const date = new Date();
+        const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+        document.getElementById('filterStartDate').valueAsDate = firstDay;
+        document.getElementById('filterEndDate').valueAsDate = date;
 
-    // --- SEARCH LOGIC (DEBOUNCE FIX) ---
-    // ส่วนนี้คือหัวใจสำคัญที่แก้ปัญหาหน้าเว็บค้าง
-    const searchInput = document.getElementById('searchInput');
-    let searchTimeout;
+        // Show floating score on load if in survey view
+        toggleFloatingScore(true);
 
-    searchInput.addEventListener('input', (e) => {
-        // ทุกครั้งที่พิมพ์ จะล้างตัวจับเวลาเก่าทิ้ง
-        clearTimeout(searchTimeout);
-        
-        // เริ่มนับเวลาใหม่ 0.3 วินาที (300ms)
-        searchTimeout = setTimeout(() => {
-            performSearch(e.target.value);
-        }, 300);
+        document.getElementById('searchKey').addEventListener('input', function(e) {
+            clearTimeout(searchTimer);
+            if(this.value.trim().length > 2) { 
+                searchTimer = setTimeout(() => searchStaff(), 1000); 
+            }
+        });
     });
 
-    function performSearch(keyword) {
-        const term = keyword.trim().toUpperCase();
-        const currentData = groupedData[currentActiveGroup]; 
-
-        if (!currentData) return;
-
-        // ถ้าค้นหาว่างเปล่า ให้แสดงทั้งหมด
-        if (term === '') {
-            renderTableRows(currentData, currentActiveGroup);
-            return;
-        }
-
-        // กรองข้อมูลใน Array (เร็วกว่าวนลูป DOM)
-        const filteredData = currentData.filter(item => {
-            const name = (item.name || "").toUpperCase();
-            const dept = (item.dept || "").toUpperCase();
-            return name.includes(term) || dept.includes(term);
-        });
-
-        // วาดตารางใหม่เฉพาะข้อมูลที่เจอ
-        renderTableRows(filteredData, currentActiveGroup);
-        document.getElementById('detailCount').innerText = `ค้นพบ ${filteredData.length} รายการ (จากกลุ่ม ${currentActiveGroup})`;
+    // --- Core Functions ---
+    function toggleFloatingScore(show) {
+        const el = document.getElementById('floatingScore');
+        if(show) el.classList.remove('hidden');
+        else el.classList.add('hidden');
     }
 
+    async function searchStaff() {
+        const key = document.getElementById('searchKey').value.trim();
+        document.getElementById('employeeInfoCard').style.display = 'none';
+        document.getElementById('searchStatusBox').style.display = 'none';
+          
+        if(!key) return;
+          
+        showLoading(true, 'กำลังค้นหาข้อมูล...');
+        try {
+            const res = await runApi('searchEmployee', { keyword: key });
+            showLoading(false);
+            if(res.found) {
+                document.getElementById('empId').value = res.empId;
+                document.getElementById('inspector').value = res.name;
+                document.getElementById('affiliation').value = res.affiliation;
+                document.getElementById('branch').value = res.branch;
+                document.getElementById('position').value = res.position;
+                document.getElementById('department').value = res.department;
+                document.getElementById('startDate').value = res.startDate; 
+                 
+                // ย้ำอีกครั้งเผื่อกรณีเปลี่ยนหน้า
+                document.getElementById('inspectDate').valueAsDate = new Date();
 
-    // --- LOGIN LOGIC ---
-    function handleLogin() {
-      const code = document.getElementById('empCode').value;
-      if (!code) {
-          Swal.fire({
-            icon: 'warning',
-            title: 'กรุณากรอกรหัสพนักงาน',
-            text: 'ช่องรหัสพนักงานห้ามว่าง',
-            confirmButtonText: 'ตกลง',
-            confirmButtonColor: '#2563eb'
-          });
-          return;
-      }
-
-      document.getElementById('btnText').innerText = 'ตรวจสอบ...';
-      document.getElementById('btnSpinner').classList.remove('hidden');
-      
-      callApi('checkLogin', { empId: code })
-        .then(isValid => {
-            if (isValid) {
-                const Toast = Swal.mixin({
-                  toast: true,
-                  position: 'top-end',
-                  showConfirmButton: false,
-                  timer: 3000,
-                  timerProgressBar: true
-                });
-                Toast.fire({ icon: 'success', title: 'เข้าสู่ระบบสำเร็จ' });
-
-                document.getElementById('loginSection').classList.add('hidden');
-                document.getElementById('appSection').classList.remove('hidden');
-                document.getElementById('datePicker').value = new Date().toISOString().split('T')[0];
-                loadReport();
+                document.getElementById('searchStatusBox').style.display = 'flex';
+                document.getElementById('foundNameText').innerText = `พบข้อมูลคุณ: ${res.name}`;
+                document.getElementById('employeeInfoCard').style.display = 'block';
+                document.querySelector('.search-card').classList.remove('missing-alert');
             } else {
-                Swal.fire({
-                  icon: 'error',
-                  title: 'เข้าสู่ระบบไม่สำเร็จ',
-                  text: 'รหัสพนักงานไม่ถูกต้อง หรือสถานะไม่ปกติ',
-                  confirmButtonColor: '#d33'
-                });
+                showGenericAlert('ไม่พบข้อมูล', 'ไม่พบรหัสพนักงานนี้ในระบบ', 'error');
             }
-        })
-        .catch(err => {
-            Swal.fire({ icon: 'error', title: 'Error', text: err.message });
-        })
-        .finally(() => {
-            document.getElementById('btnText').innerText = 'เข้าสู่ระบบ';
-            document.getElementById('btnSpinner').classList.add('hidden');
+        } catch (err) {
+            showLoading(false);
+            showGenericAlert('Error', 'การเชื่อมต่อขัดข้อง: ' + err, 'error');
+        }
+    }
+
+    function submitForm(e){ 
+        e.preventDefault(); 
+        if(!document.getElementById('empId').value) { 
+            showGenericAlert('ยังไม่มีข้อมูลพนักงาน', 'กรุณาระบุรหัสและค้นหาพนักงานก่อน', 'warning'); 
+            document.querySelector('.search-card').scrollIntoView({behavior: 'smooth', block: 'center'});
+            document.querySelector('.search-card').classList.add('missing-alert');
+            document.getElementById('searchKey').focus();
+            return; 
+        } 
+          
+        let missingCount = 0; 
+        let firstMissing = null; 
+        categories.forEach(cat => { 
+            cat.items.forEach((it, idx) => { 
+                const id = `${cat.id}_${idx+1}`; 
+                const checked = document.querySelector(`input[name="s_${id}"]:checked`); 
+                if(!checked){ 
+                    missingCount++; 
+                    const row = document.getElementById(`row_${id}`); 
+                    row.classList.add('missing-alert'); 
+                    if(!firstMissing) firstMissing = row; 
+                } 
+            }); 
+        }); 
+          
+        if(missingCount > 0) { 
+            showGenericAlert('ข้อมูลไม่ครบ', `กรุณาตอบคำถามให้ครบถ้วน (ขาด ${missingCount} ข้อ)`, 'warning'); 
+            if(firstMissing) firstMissing.scrollIntoView({behavior: "smooth", block: "center"});
+            return; 
+        } 
+          
+        document.getElementById('confirmOverlay').classList.add('active'); 
+    }
+
+    async function processRealSubmit() {
+       closeConfirmBox();
+       showLoading(true, 'กำลังบันทึกข้อมูล...');
+       let scores = {}; 
+       document.querySelectorAll('.score-radio:checked').forEach(r => scores[r.name] = r.value);
+       
+       let catSuggestions = "";
+       categories.forEach(cat => {
+           const comment = document.getElementById(`comment_${cat.id}`).value.trim();
+           if(comment) catSuggestions += `[${cat.title.split(' ')[1]}]: ${comment}\n`;
+       });
+       const generalNote = document.getElementById('note_improvement').value.trim();
+       if(generalNote) catSuggestions += `[General]: ${generalNote}`;
+
+       const payload = {
+         empId: document.getElementById('empId').value,
+         inspector: document.getElementById('inspector').value,
+         affiliation: document.getElementById('affiliation').value,
+         branch: document.getElementById('branch').value,
+         position: document.getElementById('position').value,
+         department: document.getElementById('department').value,
+         inspectDate: document.getElementById('inspectDate').value,
+         totalScore: parseFloat(document.getElementById('scoreNum').innerText), 
+         percent: document.getElementById('percentText').innerText.replace(/[()%]/g,''), 
+         scores: scores,
+         note_improvement: catSuggestions, 
+         images_improvement: []
+       };
+
+       try {
+           const res = await runApi('processForm', { data: payload });
+           showLoading(false);
+           if(res.success){
+              showGenericAlert('สำเร็จ!', 'บันทึกข้อมูลเรียบร้อยแล้ว', 'success');
+              document.forms['mainForm'].reset();
+              // Reset Date Auto
+              document.getElementById('inspectDate').valueAsDate = new Date();
+              document.getElementById('searchStatusBox').style.display='none';
+              document.getElementById('employeeInfoCard').style.display='none';
+              document.querySelectorAll('.missing-alert').forEach(el => el.classList.remove('missing-alert'));
+              calc(); window.scrollTo(0,0);
+           } else { 
+              showGenericAlert('เกิดข้อผิดพลาด', res.message, 'error'); 
+           }
+       } catch (err) {
+           showLoading(false);
+           showGenericAlert('Error', 'การเชื่อมต่อขัดข้อง: ' + err, 'error');
+       }
+    }
+
+    // --- Helper Functions ---
+    function renderQuestions(){ 
+        const c = document.getElementById('questionsContainer'); 
+        const labels = { 1: 'น้อยมาก', 2: 'น้อย', 3: 'ปานกลาง', 4: 'มาก', 5: 'มากที่สุด' };
+        let h = ''; 
+        categories.forEach(cat => { 
+            h += `<div class="modern-card"><div class="card-header-clean"><i class="bi bi-check2-circle text-danger"></i> ${cat.title}</div><div class="card-body-clean pt-0">`; 
+            cat.items.forEach((it, i) => { 
+                const id = `${cat.id}_${i+1}`; 
+                h += `<div class="audit-row" id="row_${id}"><div class="audit-title">${it}</div><div class="score-group">`; 
+                for(let s=1; s<=5; s++){ 
+                    h += `<input type="radio" class="score-radio" name="s_${id}" id="${id}_${s}" value="${s}" onchange="calc(); clearHighlight('${id}')"><label class="score-btn" for="${id}_${s}"><div class="score-val">${s}</div><div class="score-sub">${labels[s]}</div></label>`; 
+                } 
+                h += `</div></div>`; 
+            }); 
+            h += `<div class="mt-3"><label class="form-label small text-muted fw-bold">ข้อเสนอแนะหมวดนี้</label><textarea id="comment_${cat.id}" class="form-control form-control-sm bg-light" rows="2"></textarea></div></div></div>`; 
+        }); 
+        c.innerHTML = h; 
+    }
+
+    function clearHighlight(id) { document.getElementById(`row_${id}`)?.classList.remove('missing-alert'); }
+      
+    function calc(){ 
+        let checkedInputs = document.querySelectorAll('.score-radio:checked'); 
+        let totalScore = 0; 
+        checkedInputs.forEach(r => totalScore += parseInt(r.value)); 
+        const percent = totalScore; 
+          
+        // Update Hidden Fields
+        document.getElementById('scoreNum').innerText = totalScore; 
+        document.getElementById('percentText').innerText = `(${percent}%)`; 
+          
+        // Update Logic Color Text Result
+        const scoreResult = document.getElementById('scoreResult');
+        if(percent>=80) { scoreResult.innerText = "ดีเยี่ยม"; scoreResult.className="fw-bold text-success"; }
+        else if(percent>=75) { scoreResult.innerText = "ดี"; scoreResult.className="fw-bold text-primary"; }
+        else if(percent>=65) { scoreResult.innerText = "เฝ้าระวัง"; scoreResult.className="fw-bold text-warning"; }
+        else if(percent>=55) { scoreResult.innerText = "เสี่ยง"; scoreResult.className="fw-bold text-secondary"; }
+        else { scoreResult.innerText = "วิกฤต"; scoreResult.className="fw-bold text-danger"; }
+
+        // Update Floating Score Box (No Percent)
+        document.getElementById('liveScoreDisplay').innerText = totalScore;
+          
+        const progressBar = document.getElementById('progressBar'); 
+        progressBar.style.width = percent + '%'; 
+        // Logic สีและเกรด...
+        let bg = 'bg-secondary';
+        if(percent>=80) bg='bg-success'; else if(percent>=75) bg='bg-primary'; else if(percent>=65) bg='bg-warning'; else if(percent>=55) bg='bg-secondary'; else bg='bg-danger';
+        progressBar.className = `progress-bar ${bg}`;
+    }
+
+    // --- Dashboard & Charts ---
+    async function fetchReportData() {
+        showLoading(true, 'กำลังดึงข้อมูล...');
+        try {
+            const response = await runApi('getReportData');
+            showLoading(false);
+            if(response.success) {
+                allReportData = response.data;
+                // [NEW] เก็บค่าจำนวนพนักงานทั้งหมดจาก Server
+                allBranchTotals = response.branchTotals || {}; 
+                initFilters();
+                applyFilters(); 
+            } else alert('เกิดข้อผิดพลาด');
+        } catch (err) { showLoading(false); alert('Error: ' + err); }
+    }
+
+    // แก้ไขจุดที่ 3: ฟังก์ชัน initFilters สร้าง Dropdown แบบ Multi-select + Search + Select All
+    function initFilters() {
+        const renderMultiSelect = (containerId, data) => {
+            const container = document.getElementById(containerId);
+            const uniqueId = containerId + '_Dropdown';
+            
+            let html = `
+                <button class="btn btn-white custom-dropdown-btn w-100 rounded-pill" type="button" id="${uniqueId}" data-bs-toggle="dropdown" aria-expanded="false">
+                    ทั้งหมด
+                </button>
+                <div class="dropdown-menu dropdown-menu-scrollable shadow" aria-labelledby="${uniqueId}">
+                    <div class="px-2 pb-2 mb-2 border-bottom">
+                        <input type="text" class="form-control form-control-sm mb-2" placeholder="ค้นหา..." onkeyup="filterDropdownList(this)">
+                        <div class="form-check">
+                            <input class="form-check-input select-all-chk" type="checkbox" checked id="all_${containerId}" onchange="toggleSelectAll('${containerId}', this.checked)">
+                            <label class="form-check-label small fw-bold" for="all_${containerId}">เลือกทั้งหมด</label>
+                        </div>
+                    </div>
+                    <div class="list-container">
+            `;
+            
+            data.forEach((d, idx) => {
+                const itemId = `${containerId}_item_${idx}`;
+                html += `
+                    <div class="dropdown-item-text">
+                        <div class="form-check">
+                            <input class="form-check-input item-chk" type="checkbox" checked value="${d}" id="${itemId}" onchange="updateDropdownLabel('${containerId}')">
+                            <label class="form-check-label small" for="${itemId}">${d}</label>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `</div></div>`;
+            container.innerHTML = html;
+            
+            // ป้องกัน Dropdown ปิดเมื่อคลิกข้างใน
+            container.addEventListener('click', function(e) {
+                 e.stopPropagation();
+            });
+        };
+
+        const depts = [...new Set(allReportData.map(d => d.department))].filter(Boolean).sort();
+        const branches = [...new Set(allReportData.map(d => d.branch))].filter(Boolean).sort();
+        const positions = [...new Set(allReportData.map(d => d.position))].filter(Boolean).sort();
+
+        renderMultiSelect('filterDeptContainer', depts);
+        renderMultiSelect('filterBranchContainer', branches);
+        renderMultiSelect('filterPositionContainer', positions);
+    }
+    
+    // ฟังก์ชันเสริมสำหรับ Multi-select logic
+    function filterDropdownList(input) {
+        const filter = input.value.toLowerCase();
+        const items = input.closest('.dropdown-menu').querySelectorAll('.dropdown-item-text');
+        items.forEach(item => {
+            const text = item.textContent.toLowerCase();
+            item.style.display = text.indexOf(filter) > -1 ? '' : 'none';
         });
     }
-    document.getElementById('empCode').addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
 
-    // --- TABS & LOADING ---
-    function switchTab(tabName) {
-      const pSum = document.getElementById('pageSummary');
-      const pDet = document.getElementById('pageDetail');
-      const tSum = document.getElementById('tabSummary');
-      const tDet = document.getElementById('tabDetail');
-      const act = "px-6 py-2 rounded-md text-sm font-bold shadow-sm bg-white text-blue-700 border border-gray-200 transition-all flex items-center";
-      const inact = "px-6 py-2 rounded-md text-sm font-bold text-gray-500 hover:bg-gray-200 hover:text-gray-700 transition-all flex items-center";
-
-      if (tabName === 'summary') {
-        pSum.classList.remove('hidden'); pDet.classList.add('hidden');
-        tSum.className = act; tDet.className = inact;
-      } else {
-        pSum.classList.add('hidden'); pDet.classList.remove('hidden');
-        tDet.className = act; tSum.className = inact;
-      }
+    function toggleSelectAll(containerId, checked) {
+        const container = document.getElementById(containerId);
+        const checkboxes = container.querySelectorAll('.item-chk');
+        checkboxes.forEach(cb => {
+            if(cb.closest('.dropdown-item-text').style.display !== 'none') {
+               cb.checked = checked;
+            }
+        });
+        updateDropdownLabel(containerId);
     }
 
-    function loadReport() {
-      const dateVal = document.getElementById('datePicker').value;
-      if (!dateVal) {
-        Swal.fire({ icon: 'warning', title: 'แจ้งเตือน', text: 'กรุณาเลือกวันที่', confirmButtonColor: '#2563eb' });
-        return;
-      }
-      document.getElementById('loading').classList.remove('hidden');
-      document.getElementById('tableBody').innerHTML = ''; 
-      
-      callApi('getSummaryByDate', { dateStr: dateVal })
-        .then(data => {
-             renderReport(data);
-        })
-        .catch(err => {
-            Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: err.message, confirmButtonColor: '#d33' });
-        })
-        .finally(() => {
-            document.getElementById('loading').classList.add('hidden');
+    function updateDropdownLabel(containerId) {
+        const container = document.getElementById(containerId);
+        const allChk = container.querySelector('.select-all-chk');
+        const checkboxes = container.querySelectorAll('.item-chk');
+        const checkedCount = container.querySelectorAll('.item-chk:checked').length;
+        const btn = container.querySelector('.custom-dropdown-btn');
+
+        if(checkedCount === checkboxes.length) {
+            allChk.checked = true;
+            allChk.indeterminate = false;
+            btn.innerText = "ทั้งหมด";
+        } else if(checkedCount === 0) {
+            allChk.checked = false;
+            allChk.indeterminate = false;
+            btn.innerText = "ไม่ได้เลือก";
+        } else {
+            allChk.checked = false;
+            allChk.indeterminate = true;
+            btn.innerText = `เลือก ${checkedCount} รายการ`;
+        }
+    }
+
+    function getSelectedValues(containerId) {
+        const container = document.getElementById(containerId);
+        const checked = container.querySelectorAll('.item-chk:checked');
+        return Array.from(checked).map(cb => cb.value);
+    }
+
+    // แก้ไขจุดที่ 4: applyFilters รองรับ Multi-select
+    function applyFilters() { 
+        const start = document.getElementById('filterStartDate').value; 
+        const end = document.getElementById('filterEndDate').value; 
+        
+        const selectedDepts = getSelectedValues('filterDeptContainer');
+        const selectedBranches = getSelectedValues('filterBranchContainer');
+        const selectedPositions = getSelectedValues('filterPositionContainer');
+
+        const filtered = allReportData.filter(item => { 
+            let itemDate = item.inspectDate; 
+            let inRange = (!start || itemDate >= start) && (!end || itemDate <= end);
+            
+            // เช็คว่าค่าของ item อยู่ในลิสต์ที่เลือกหรือไม่
+            const deptMatch = selectedDepts.includes(item.department);
+            const branchMatch = selectedBranches.includes(item.branch);
+            const posMatch = selectedPositions.includes(item.position);
+
+            return inRange && deptMatch && branchMatch && posMatch;
+        }); 
+        currentFilteredData = filtered; // Store for chart interactions
+        renderDashboard(filtered); 
+    }
+
+    function renderDashboard(data) { 
+        document.getElementById('valTotalCount').innerText = data.length; 
+        const avgScore = data.length ? (data.reduce((a,b) => a + b.score, 0) / data.length) : 0; 
+        const avgPercent = data.length ? (data.reduce((a,b) => a + b.percent, 0) / data.length) : 0; 
+        document.getElementById('valAvgScore').innerText = avgScore.toFixed(2); 
+        document.getElementById('valAvgPercent').innerText = avgPercent.toFixed(0) + '%'; 
+          
+        if (dataTableInstance) dataTableInstance.destroy(); 
+        const tbody = document.getElementById('tableBody'); 
+        tbody.innerHTML = data.map(r => `<tr><td>${r.inspectDate}</td><td><div class="fw-bold">${r.name}</div><div class="small text-muted">${r.empId}</div></td><td>${r.branch || '-'}</td><td><span class="fw-bold text-primary">${r.score}</span></td><td><span class="badge rounded-pill ${getBadgeClass(r.grade)}">${r.grade}</span></td><td><span class="d-inline-block text-truncate" style="max-width: 150px;">${r.suggestion || '-'}</span></td></tr>`).join(''); 
+        dataTableInstance = $('#dataTable').DataTable({ language: { url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/th.json" }, order: [[0, 'desc']], pageLength: 5 }); 
+          
+        renderCharts(data); 
+    }
+
+    function renderCharts(data) { 
+        // 1. Grade Pie Chart [UPDATED: Click Event logic for Average Score & Percent]
+        const grades = {}; 
+        data.forEach(d => { const g = d.grade || 'Unknown'; grades[g] = (grades[g] || 0) + 1; }); 
+        const ctxGrade = document.getElementById('gradeChart').getContext('2d'); 
+        if(gradeChartInstance) gradeChartInstance.destroy(); 
+        gradeChartInstance = new Chart(ctxGrade, { 
+            type: 'doughnut', 
+            data: { 
+                labels: Object.keys(grades), 
+                datasets: [{ 
+                    data: Object.values(grades), 
+                    backgroundColor: ['#22c55e', '#eab308', '#ef4444', '#3b82f6', '#64748b'],
+                    borderWidth: 2, borderColor: '#ffffff'
+                }] 
+            }, 
+            options: { 
+                maintainAspectRatio: false, 
+                plugins: { 
+                    legend: { 
+                        display: true, 
+                        position: 'right',
+                        labels: { boxWidth: 12, font: { size: 10 } }
+                    },
+                    tooltip: { enabled: true }
+                },
+                // [NEW Requirement 3] On Click Handler for Pie Chart
+                onClick: (evt, elements) => {
+                    if (elements.length > 0) {
+                        const index = elements[0].index;
+                        const label = gradeChartInstance.data.labels[index];
+                        const count = gradeChartInstance.data.datasets[0].data[index];
+                        
+                        // Calculate stats for this grade from currentFilteredData
+                        const groupData = currentFilteredData.filter(d => (d.grade || 'Unknown') === label);
+                        const groupAvgPercent = groupData.length ? (groupData.reduce((a,b)=>a+b.percent,0)/groupData.length).toFixed(1) : 0;
+                        const groupAvgScore = groupData.length ? (groupData.reduce((a,b)=>a+b.score,0)/groupData.length).toFixed(2) : 0;
+                        const totalCount = currentFilteredData.length;
+                        const ratio = ((count/totalCount)*100).toFixed(1);
+
+                        // Show detailed alert with Score and Percent
+                        showGenericAlert(
+                            `รายละเอียด: ${label}`,
+                            `จำนวน: ${count} คน (${ratio}%)\n\nคะแนนเฉลี่ย: ${groupAvgScore}\nเปอร์เซ็นต์เฉลี่ย: ${groupAvgPercent}%`,
+                            'info'
+                        );
+                    }
+                }
+            } 
+        }); 
+
+        // 2. Trend Chart [UPDATED: Show Data Labels on top of line]
+        const sortedData = [...data].sort((a,b) => new Date(a.inspectDate) - new Date(b.inspectDate));
+        const monthlyData = {};
+        sortedData.forEach(d => {
+            const dateObj = new Date(d.inspectDate);
+            const monthKey = dateObj.toLocaleString('th-TH', { month: 'short', year: '2-digit' });
+            if(!monthlyData[monthKey]) monthlyData[monthKey] = { sumPercent: 0, count: 0 };
+            monthlyData[monthKey].sumPercent += d.percent;
+            monthlyData[monthKey].count++;
+        });
+
+        const trendLabels = Object.keys(monthlyData);
+        const trendValues = trendLabels.map(k => (monthlyData[k].sumPercent / monthlyData[k].count).toFixed(2));
+        const trendCounts = trendLabels.map(k => monthlyData[k].count); 
+
+        const ctxTrend = document.getElementById('trendChart').getContext('2d');
+        let gradient = ctxTrend.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(185, 28, 28, 0.5)'); 
+        gradient.addColorStop(1, 'rgba(185, 28, 28, 0.0)');
+
+        if(trendChartInstance) trendChartInstance.destroy(); 
+        trendChartInstance = new Chart(ctxTrend, { 
+            type: 'line', 
+            plugins: [ChartDataLabels], // Enable Plugin
+            data: { 
+                labels: trendLabels, 
+                datasets: [{ 
+                    label: 'คะแนนเฉลี่ยรายเดือน (%)', 
+                    data: trendValues, 
+                    borderColor: '#b91c1c', 
+                    backgroundColor: gradient, 
+                    fill: true, 
+                    tension: 0.4,
+                    pointBackgroundColor: '#b91c1c',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }] 
+            }, 
+            options: { 
+                maintainAspectRatio: false, 
+                scales: { y: { beginAtZero: true, max: 120 } }, 
+                plugins: { 
+                    legend: { display: true },
+                    // [NEW Requirement 2] Data Labels Configuration
+                    datalabels: {
+                        display: true,
+                        align: 'top',
+                        anchor: 'start',
+                        color: '#b91c1c',
+                        backgroundColor: 'white',
+                        borderRadius: 4,
+                        font: { weight: 'bold' },
+                        formatter: (value) => value + '%'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            afterLabel: function(context) {
+                                const count = trendCounts[context.dataIndex];
+                                return `จำนวนผู้ทำ: ${count} คน`;
+                            }
+                        }
+                    } 
+                } 
+            } 
+        });
+
+        // 3. Branch Performance
+        const branchData = {};
+        data.forEach(d => {
+            const b = d.branch || 'Unknown';
+            if(!branchData[b]) branchData[b] = { sumPercent: 0, count: 0 };
+            branchData[b].sumPercent += d.percent;
+            branchData[b].count++;
+        });
+        const bLabels = Object.keys(branchData);
+        const bCounts = bLabels.map(l => branchData[l].count);
+        const bAvgPercents = bLabels.map(l => (branchData[l].sumPercent / branchData[l].count).toFixed(1));
+
+        const dynamicColors = bLabels.map((_, i) => `hsl(${i * 360 / bLabels.length}, 70%, 60%)`);
+
+        const ctxBranch = document.getElementById('branchChart').getContext('2d');
+        if(branchChartInstance) branchChartInstance.destroy(); 
+        
+        branchChartInstance = new Chart(ctxBranch, {
+            type: 'bar',
+            plugins: [ChartDataLabels], 
+            data: {
+                labels: bLabels,
+                datasets: [
+                    {
+                        type: 'line',
+                        label: 'คะแนนเฉลี่ย (%)',
+                        data: bAvgPercents,
+                        borderColor: '#334155',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        tension: 0.3,
+                        yAxisID: 'y',
+                        pointStyle: 'circle',
+                        pointRadius: 6,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#334155',
+                        datalabels: {
+                            align: 'top',
+                            anchor: 'end',
+                            backgroundColor: '#334155',
+                            color: 'white',
+                            borderRadius: 4,
+                            font: { size: 10, weight: 'bold' },
+                            formatter: (value) => value + '%'
+                        }
+                    },
+                    {
+                        type: 'bar',
+                        label: 'จำนวนคน',
+                        data: bCounts,
+                        backgroundColor: dynamicColors,
+                        yAxisID: 'y1',
+                        borderRadius: 6,
+                        barPercentage: 0.6,
+                        datalabels: {
+                            align: 'center',
+                            anchor: 'center',
+                            color: '#fff', 
+                            font: { weight: 'bold', size: 14 },
+                            formatter: (value) => value > 0 ? value + ' คน' : '' 
+                        }
+                    }
+                ]
+            },
+            options: {
+                maintainAspectRatio: false,
+                scales: {
+                    y: { type: 'linear', position: 'left', max: 120, title: {display: true, text: 'Score %'} }, 
+                    y1: { type: 'linear', position: 'right', grid: {drawOnChartArea: false}, title: {display: true, text: 'People'} }
+                },
+                plugins: {
+                    legend: { display: true },
+                    // ------------------------------------------------
+                    // [EDITED POINT] ส่วนที่แก้ไข Tooltip ของกราฟแท่ง
+                    // ------------------------------------------------
+                    tooltip: {
+                        callbacks: {
+                            // ปรับข้อความ Label (บรรทัดที่ 2: ทำแบบสำรวจ ...)
+                            label: function(context) {
+                                // ถ้าเป็น Dataset กราฟแท่ง (Dataset Index 1 หรือเช็ค type='bar')
+                                if (context.dataset.type === 'bar') {
+                                    return `ทำแบบสำรวจ ${context.parsed.y} คน`;
+                                }
+                                // ถ้าเป็นกราฟเส้น
+                                return `${context.dataset.label}: ${context.parsed.y}%`;
+                            },
+                            // เพิ่มบรรทัดถัดไป (บรรทัดที่ 3: จำนวนพนักงานทั้งหมด ...)
+                            afterBody: function(tooltipItems) {
+                                // ดึงชื่อสาขาที่กำลัง Hover
+                                const branchName = tooltipItems[0].label;
+                                // ดึงจำนวนทั้งหมดจากตัวแปร global
+                                const totalEmp = allBranchTotals[branchName] || 0;
+                                return `จำนวนพนักงานทั้งหมด ${totalEmp} คน`;
+                            }
+                        }
+                    }
+                    // ------------------------------------------------
+                }
+            }
         });
     }
 
-    function renderReport(data) {
-      globalDetails = data.details || [];
-      const calculatedData = calculateSummaryFromDetails(globalDetails);
-      renderSummaryTable(calculatedData.report, calculatedData.total);
-      initDetailGrouping();
+    // --- UI Utilities ---
+    function openReportLogin(){ 
+        const modal = new bootstrap.Modal(document.getElementById('passwordModal'));
+        modal.show(); 
+        document.getElementById('hrPassword').value = ''; 
+    }
+      
+    function togglePass() { 
+        const input = document.getElementById("hrPassword"); 
+        const icon = document.getElementById("togglePassword"); 
+        if (input.type === "password") { input.type = "text"; icon.classList.replace("bi-eye-slash", "bi-eye"); } 
+        else { input.type = "password"; icon.classList.replace("bi-eye", "bi-eye-slash"); } 
     }
 
-    // --- FUNCTION TO CALCULATE SUMMARY LOCALLY ---
-    function calculateSummaryFromDetails(details) {
-       let reportMap = {};
-       let total = { count: 0, absent: 0, late: 0, sick: 0, personal: 0, vacation: 0, switchHoliday: 0, noInfo: 0 };
+    // *** ฟังก์ชันเช็ครหัสผ่าน พร้อม Pop-up Animation ***
+    function checkPassword(){ 
+        const pass = document.getElementById('hrPassword').value; 
+        if(pass === 'HRJMT123'){ 
+            bootstrap.Modal.getInstance(document.getElementById('passwordModal')).hide(); 
+            switchToDashboard(); 
+        } else { 
+            // เรียกใช้ Alert แบบเด้งดึ๋ง
+            showGenericAlert('รหัสผ่านไม่ถูกต้อง', 'กรุณาตรวจสอบรหัสผ่านและลองใหม่อีกครั้ง', 'error');
+            document.getElementById('hrPassword').value = ''; 
+        } 
+    }
 
-       details.forEach(item => {
-          let deptName = getDeptGroup(item.dept);
+    function switchToDashboard() { 
+        document.getElementById('view-survey').classList.remove('active');
+        toggleFloatingScore(false); // Hide floating score
+        setTimeout(() => { document.getElementById('view-dashboard').classList.add('active'); fetchReportData(); }, 300); 
+    }
+    function switchToSurvey() { 
+        document.getElementById('view-dashboard').classList.remove('active'); 
+        setTimeout(() => { 
+            document.getElementById('view-survey').classList.add('active'); 
+            toggleFloatingScore(true); // Show floating score
+        }, 300); 
+    }
+      
+    function showLoading(show, text='กำลังดำเนินการ...') { 
+        document.getElementById('loadingText').innerText = text; 
+        document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none'; 
+    }
+
+    // *** Custom Alert Logic ***
+    function showGenericAlert(title, text, type='success'){ 
+        const box = document.getElementById('customAlertOverlay'); 
+        const iconEl = document.getElementById('alertIcon'); 
+        const closeBtn = document.getElementById('alertCloseBtn'); 
           
-          if (!reportMap[deptName]) {
-             reportMap[deptName] = { 
-               name: deptName, count: 0, 
-               absent: 0, late: 0, sick: 0, personal: 0, vacation: 0, switchHoliday: 0, noInfo: 0 
-             };
-          }
+        document.getElementById('alertTitle').innerText = title; 
+        document.getElementById('alertText').innerText = text; 
           
-          let d = reportMap[deptName];
-          d.count++;
-          total.count++;
-
-          const status = (item.reportIn || "").toLowerCase();
-
-          if (status.includes("ทำงาน") || status.includes("working")) {
-          } else if (status.includes("สาย") || status.includes("late")) {
-             d.late++; total.late++;
-          } else if (status.includes("ขาด") || status.includes("absent")) {
-             d.absent++; total.absent++;
-          } else if (status.includes("สลับวันหยุด")) {
-             d.switchHoliday++; total.switchHoliday++;
-          } else if (status.includes("ป่วย") || status.includes("sick")) {
-             d.sick++; total.sick++;
-          } else if (status.includes("กิจ") || status.includes("personal")) {
-             d.personal++; total.personal++;
-          } else if (status.includes("พักร้อน") || status.includes("vacation")) {
-             d.vacation++; total.vacation++;
-          } else {
-             d.noInfo++; total.noInfo++;
-          }
-       });
-
-       let reportArray = Object.values(reportMap).sort((a, b) => {
-           return (b.count - a.count) || a.name.localeCompare(b.name);
-       });
-
-       return { report: reportArray, total: total };
+        box.classList.add('active'); // Trigger CSS Animation
+          
+        iconEl.className = 'status-circle'; 
+        if(type === 'success'){ 
+            iconEl.classList.add('success-circle'); 
+            iconEl.innerHTML = '<i class="bi bi-check-lg"></i>'; 
+            closeBtn.className = 'btn btn-success rounded-pill w-100 mt-2'; 
+        } else if(type === 'error'){ 
+            iconEl.classList.add('error-circle'); 
+            iconEl.innerHTML = '<i class="bi bi-x-lg"></i>'; 
+            closeBtn.className = 'btn btn-danger rounded-pill w-100 mt-2'; 
+        } else if(type === 'info') {
+            iconEl.classList.add('info-circle'); 
+            iconEl.innerHTML = '<i class="bi bi-info-lg"></i>'; 
+            closeBtn.className = 'btn btn-info text-white rounded-pill w-100 mt-2'; 
+        } else { 
+            iconEl.classList.add('warning-circle'); 
+            iconEl.innerHTML = '<i class="bi bi-exclamation-lg"></i>'; 
+            closeBtn.className = 'btn btn-warning text-dark rounded-pill w-100 mt-2'; 
+        } 
     }
-
-    // --- HELPER FUNCTION: GROUP DEPARTMENT LOGIC ---
-    function getDeptGroup(rawName) {
-       if (!rawName) return 'ไม่ระบุ';
-       const n = rawName.toUpperCase();
-
-       if (n.includes("JAM ชั่วคราว")) return "พนักงานชั่วคราวรายวัน";
-       if (n.includes("ซื้อหนี้") || n.includes("รับจ้าง")) return "Collection";
-       if (n.includes("FCR") || n.includes("FIELD COLLECTOR") || n.includes("DEBT MANAGEMENT ADVISOR")) return "ภาคสนาม";
-
-       if (n.includes("บังคับคดี")) return "บังคับคดี";
-       if (n.includes("TRAINING") || n.includes("RECRUITMENT") || n.includes("HUMAN RESOURCES") || n.includes("EMPLOYEE RELATIONS")) return "HUMAN RESOURCES";
-       if (n.includes("MARKETING")) return "MARKETING";
-       if (n.includes("ADMIN")) return "ADMIN";
-       if (n.includes("FINANCE")) return "FINANCE & ACCOUNT";
-       if (n.includes("NPA") || n.includes("NPL") || n.includes("JK ASSET") || n.includes("SCB ASSET")) return "NPA/NPL";
-       if (n.includes("STRATEGIC PLANNING")) return "STRATEGIC PLANNING";
-       if (n.includes("SERVICE") && n.includes("MAINTENANCE")) return "SERVICE & MAINTENANCE";
-       if (n.includes("คอมพิวเตอร์") || n.includes("IT SUPPORT")) return "คอมพิวเตอร์ / IT";
-       if (n.includes("กฎหมาย")) return "กฎหมาย";
-       if (n.includes("ธุรการพิเศษ")) return "ธุรการพิเศษ";
-
-       if (n.includes("สาขา")) {
-          let parts = rawName.split("สาขา");
-          if(parts.length > 0 && parts[0].trim() !== "") return parts[0].trim();
-       }
-
-       return rawName; 
-    }
-
-    // --- SUMMARY TABLE RENDER ---
-    function renderSummaryTable(report, total) {
-      const tbody = document.getElementById('tableBody');
-      const tfoot = document.getElementById('tableFooter');
-      let html = '';
       
-      if (!report || report.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="19" class="py-16 text-center text-gray-500">ไม่พบข้อมูล...</td></tr>`;
-        return;
-      }
-
-      const calcP = (val, max) => (max > 0 && val > 0) ? ((val / max) * 100).toFixed(2) + '%' : '-';
-      const colorP = (val) => val > 0 ? 'text-red-600 font-bold' : 'text-gray-300';
-
-      report.forEach((dept, index) => {
-        const loss = dept.absent + dept.late + dept.sick + dept.personal + dept.vacation + dept.switchHoliday + dept.noInfo;
-        const pct = dept.count > 0 ? (loss / dept.count) * 100 : 0;
-        
-        html += `
-          <tr>
-            <td class="text-gray-500 num-cell">${index + 1}</td>
-            <td class="text-dept text-gray-700">${dept.name}</td>
-            <td class="font-bold bg-gray-50 num-cell">${dept.count}</td>
-            
-            <td class="${dept.absent>0?'text-red-600 font-bold':''} num-cell">${dept.absent||''}</td>
-            <td class="${dept.late>0?'text-red-600 font-bold':''} num-cell">${dept.late||''}</td>
-            <td class="num-cell">${dept.sick||''}</td><td class="num-cell">${dept.personal||''}</td><td class="num-cell">${dept.vacation||''}</td><td class="num-cell">${dept.switchHoliday||''}</td>
-            
-            <td class="num-cell ${dept.noInfo>0?'text-red-600 font-bold':''}">${dept.noInfo||''}</td>
-            
-            <td class="bg-blue-50 font-bold text-blue-800 border-l border-r border-blue-200 num-cell">${loss||'-'}</td>
-            
-            <td class="${colorP(dept.absent)} num-cell">${calcP(dept.absent, dept.count)}</td>
-            <td class="${colorP(dept.late)} num-cell">${calcP(dept.late, dept.count)}</td>
-            <td class="${colorP(dept.sick)} num-cell">${calcP(dept.sick, dept.count)}</td>
-            <td class="${colorP(dept.personal)} num-cell">${calcP(dept.personal, dept.count)}</td>
-            <td class="${colorP(dept.vacation)} num-cell">${calcP(dept.vacation, dept.count)}</td>
-            <td class="${colorP(dept.switchHoliday)} num-cell">${calcP(dept.switchHoliday, dept.count)}</td>
-            
-            <td class="${colorP(dept.noInfo)} num-cell">${calcP(dept.noInfo, dept.count)}</td>
-            
-            <td class="bg-red-50 font-bold border-l border-red-200 num-cell ${pct>0?'text-red-600':'text-gray-400'}">${pct.toFixed(2)}%</td>
-          </tr>`;
-      });
-      tbody.innerHTML = html;
+    function closeCustomAlert() { document.getElementById('customAlertOverlay').classList.remove('active'); }
+    function closeConfirmBox() { document.getElementById('confirmOverlay').classList.remove('active'); }
       
-      const grandLoss = total.absent + total.late + total.sick + total.personal + total.vacation + total.switchHoliday + total.noInfo;
-      tfoot.innerHTML = `
-        <tr class="text-sm bg-gray-100 border-t-2 border-gray-300">
-          <td colspan="2" class="text-right pr-4 py-3 text-gray-600 font-bold">รวมทั้งสิ้น (Grand Total)</td>
-          <td class="text-lg text-black bg-gray-200 border-gray-300 num-cell font-bold">${total.count}</td>
-          <td class="${total.absent>0?'text-red-700 font-bold':''} num-cell">${total.absent}</td>
-          <td class="${total.late>0?'text-red-700 font-bold':''} num-cell">${total.late}</td>
-          <td class="num-cell font-bold">${total.sick}</td>
-          <td class="num-cell font-bold">${total.personal}</td>
-          <td class="num-cell font-bold">${total.vacation}</td>
-          <td class="num-cell font-bold">${total.switchHoliday}</td>
-          <td class="${total.noInfo>0?'text-red-700 font-bold':''} num-cell">${total.noInfo}</td>
-          <td class="bg-blue-200 text-blue-900 text-lg border-blue-300 num-cell font-bold">${grandLoss}</td>
-          <td colspan="8" class="bg-gray-100"></td>
-        </tr>
-      `;
+    function showManual(){ new bootstrap.Modal(document.getElementById('manualModal')).show(); }
+    function getBadgeClass(grade) { 
+        if(grade.includes('Good') || grade.includes('Excellent')) return 'badge-grade-good'; 
+        if(grade.includes('Improve') || grade.includes('Watchlist')) return 'badge-grade-improve'; 
+        return 'badge-grade-urgent'; 
     }
 
-    // --- GROUPING LOGIC ---
-    function initDetailGrouping() {
-      groupedData = {
-        'รอตรวจสอบสถานะ': [],
-        'มาสาย': [],
-        'ขาดงาน': [],
-        'ลางาน': [],
-        'สลับวันหยุด': [],
-        'ทำงาน': []
-      };
-      
-      globalDetails.sort((a, b) => a.dept.localeCompare(b.dept) || a.name.localeCompare(b.name));
-
-      globalDetails.forEach(item => {
-        const reportIn = (item.reportIn || "").toLowerCase();
-        
-        if (reportIn.includes("ทำงาน")) {
-            groupedData['ทำงาน'].push(item);
-        } else if (reportIn.includes("สาย")) {
-            groupedData['มาสาย'].push(item);
-        } else if (reportIn.includes("ขาด") || reportIn.includes("absent")) {
-            groupedData['ขาดงาน'].push(item);
-        } else if (reportIn.includes("สลับวันหยุด")) {
-            groupedData['สลับวันหยุด'].push(item);
-        } else if (reportIn.includes("ลา") || (item.leaveStatus !== '-' && item.leaveStatus)) {
-            groupedData['ลางาน'].push(item);
-        } else {
-            groupedData['รอตรวจสอบสถานะ'].push(item);
-        }
-      });
-
-      renderFilterButtons();
-      
-      if(groupedData['รอตรวจสอบสถานะ'].length > 0) {
-        selectGroup('รอตรวจสอบสถานะ');
-      } else {
-        selectGroup('ทำงาน');
-      }
+    function exportXLSX() {
+        if(allReportData.length === 0) { showGenericAlert('ไม่พบข้อมูล', 'ไม่มีข้อมูลสำหรับ Export', 'warning'); return; }
+        const dataToExport = allReportData.map(row => ({
+            "วันที่ประเมิน": row.inspectDate,
+            "รหัสพนักงาน": row.empId,
+            "ชื่อ-นามสกุล": row.name,
+            "ตำแหน่ง": row.position,
+            "แผนก": row.department,
+            "สาขา": row.branch,
+            "สังกัด": row.affiliation,
+            "คะแนนรวม": row.score,
+            "เปอร์เซ็นต์": row.percent + "%",
+            "เกรด": row.grade,
+            "ข้อเสนอแนะ": row.suggestion
+        }));
+        const ws = XLSX.utils.json_to_sheet(dataToExport);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "EngagementReport");
+        XLSX.writeFile(wb, "Engagement_Survey_Report.xlsx");
     }
-
-    function renderFilterButtons() {
-      const container = document.getElementById('filterBar');
-      let html = '';
-      
-      const config = [
-          { key: 'รอตรวจสอบสถานะ', label: '⚠ รอตรวจสอบ', color: 'bg-gray-600' },
-          { key: 'มาสาย', label: 'มาสาย', color: 'bg-orange-500' },
-          { key: 'ขาดงาน', label: 'ขาดงาน', color: 'bg-red-600' },
-          { key: 'ลางาน', label: 'ลางาน', color: 'bg-green-600' },
-          { key: 'สลับวันหยุด', label: 'สลับวันหยุด', color: 'bg-indigo-500' },
-          { key: 'ทำงาน', label: 'ทำงานปกติ', color: 'bg-blue-600' }
-      ];
-
-      config.forEach(c => {
-        const count = groupedData[c.key].length;
-        const opacity = count === 0 ? 'opacity-50 grayscale' : '';
-        html += `
-          <button onclick="selectGroup('${c.key}')" 
-              id="btn-${c.key}"
-              class="filter-btn relative flex items-center gap-2 px-4 py-2 rounded-lg text-white font-medium shadow-sm transition-all whitespace-nowrap ${c.color} ${opacity} hover:brightness-110 focus:outline-none">
-              <span>${c.label}</span>
-              <span class="bg-white bg-opacity-20 px-2 py-0.5 rounded-md text-xs font-bold">${count}</span>
-          </button>
-        `;
-      });
-      container.innerHTML = html;
-    }
-
-    function selectGroup(key) {
-      currentActiveGroup = key;
-      
-      // *** FIX: เคลียร์ค่าค้นหาเมื่อเปลี่ยนกลุ่ม ***
-      const sInput = document.getElementById('searchInput');
-      if(sInput) sInput.value = '';
-
-      document.querySelectorAll('.filter-btn').forEach(btn => {
-         btn.classList.remove('ring-4', 'ring-opacity-30', 'scale-105', 'font-bold');
-      });
-      const activeBtn = document.getElementById(`btn-${key}`);
-      if(activeBtn) activeBtn.classList.add('ring-4', 'ring-opacity-30', 'scale-105', 'font-bold');
-
-      document.getElementById('currentGroupTitle').innerText = `กลุ่ม: ${key}`;
-      renderTableRows(groupedData[key], key);
-    }
-
-    function renderTableRows(items, groupKey) {
-      const tbody = document.getElementById('detailTableBody');
-      const countDiv = document.getElementById('detailCount');
-      
-      if (!items || items.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-gray-400">ไม่มีรายชื่อในกลุ่มนี้</td></tr>`;
-          countDiv.innerText = '0 รายการ';
-          return;
-      }
-
-      let html = '';
-      items.forEach((emp, i) => {
-        let statusDisplay = '';
-        if (groupKey === 'รอตรวจสอบสถานะ') {
-           statusDisplay = `
-             <select onchange="saveStatus(${emp.rowIndex}, this.value, this)" class="w-full text-xs border border-yellow-400 bg-yellow-50 text-yellow-900 rounded p-1 focus:ring-2 focus:ring-yellow-500 outline-none cursor-pointer">
-               <option value="" disabled selected>-- เลือกสถานะ --</option>
-               <option value="ทำงาน">ทำงาน</option>
-               <option value="มาสาย">มาสาย</option>
-               <option value="ลาป่วย">ลาป่วย</option>
-               <option value="ลากิจ">ลากิจ</option>
-               <option value="ขาดงาน">ขาดงาน</option>
-               <option value="สลับวันหยุด">สลับวันหยุด</option>
-               <option value="ลาคลอด">ลาคลอด</option>
-               <option value="ลาไม่รับค่าจ้าง">ลาไม่รับค่าจ้าง</option>
-               <option value="ลาบวช">ลาบวช</option>
-             </select>
-           `;
-        } else {
-           statusDisplay = `<span class="px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-600">${emp.reportIn || '-'}</span>`;
-        }
-
-        html += `
-          <tr class="hover:bg-blue-50 transition-colors search-row">
-            <td class="px-4 py-2 text-center text-gray-400 text-xs">${i + 1}</td>
-            <td class="px-4 py-2 font-medium text-gray-800">${emp.name}</td>
-            <td class="px-4 py-2 text-gray-500 text-xs">${emp.dept}</td>
-            <td class="px-4 py-2 text-center font-mono text-green-600">${emp.timeIn || '--:--'}</td>
-            <td class="px-4 py-2 text-center font-mono text-red-600">${emp.timeOut || '--:--'}</td>
-            <td class="px-4 py-2">${statusDisplay}</td>
-          </tr>
-        `;
-      });
-
-      tbody.innerHTML = html;
-      countDiv.innerText = `แสดงผล ${items.length} รายการ`;
-    }
-
-    // --- MODAL & SAVE LOGIC ---
-    function saveStatus(rowIndex, newValue, selectEl) {
-       pendingRowIndex = rowIndex;
-       pendingStatusValue = newValue;
-       pendingSelectElement = selectEl;
-       
-       document.getElementById('confirmStatusText').innerText = newValue;
-       document.getElementById('customConfirmModal').classList.remove('hidden');
-       
-       setTimeout(() => {
-         document.getElementById('remarkInput').focus();
-       }, 100);
-    }
-
-    function closeConfirmModal() {
-       document.getElementById('customConfirmModal').classList.add('hidden');
-       
-       if(pendingSelectElement) {
-         pendingSelectElement.value = ""; 
-       }
-
-       const remarkInput = document.getElementById('remarkInput');
-       remarkInput.value = '';
-       remarkInput.classList.remove('input-error');
-       document.getElementById('remarkError').classList.add('hidden');
-
-       pendingRowIndex = null;
-       pendingStatusValue = null;
-       pendingSelectElement = null;
-    }
-
-    function executeStatusUpdate() {
-       if(pendingRowIndex === null || pendingStatusValue === null) return;
-       
-       const remarkInput = document.getElementById('remarkInput');
-       const remarkError = document.getElementById('remarkError');
-       const remark = remarkInput.value.trim();
-
-       if (!remark) {
-           remarkInput.classList.add('input-error');
-           remarkError.classList.remove('hidden');
-           remarkInput.focus();
-           return;
-       }
-
-       document.getElementById('customConfirmModal').classList.add('hidden');
-       document.getElementById('savingOverlay').classList.remove('hidden');
-
-       callApi('updateStatus', { rowIndex: pendingRowIndex, newStatus: pendingStatusValue, remark: remark })
-         .then(() => {
-            const Toast = Swal.mixin({
-                toast: true,
-                position: 'top-end',
-                showConfirmButton: false,
-                timer: 3000,
-                timerProgressBar: true
-            });
-            Toast.fire({ icon: 'success', title: 'บันทึกข้อมูลเรียบร้อย' });
-
-            remarkInput.value = '';
-            remarkInput.classList.remove('input-error');
-            remarkError.classList.add('hidden');
-            
-            loadReport(); 
-            pendingRowIndex = null;
-            pendingStatusValue = null;
-            pendingSelectElement = null;
-         })
-         .catch(err => {
-            Swal.fire({
-                icon: 'error',
-                title: 'บันทึกไม่สำเร็จ',
-                text: err.message,
-                confirmButtonColor: '#d33'
-            });
-         })
-         .finally(() => {
-            document.getElementById('savingOverlay').classList.add('hidden');
-         });
-    }
-
   </script>
 </body>
 </html>
-
