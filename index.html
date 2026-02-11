@@ -131,20 +131,29 @@
       <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
         <div id="filterBar" class="flex gap-3 overflow-x-auto pb-2 scrollbar-hide mb-2"></div>
         
-        <div class="flex flex-col sm:flex-row justify-between items-center gap-3 mb-4 bg-gray-50 p-3 rounded-lg border border-gray-200">
-           <h2 id="currentGroupTitle" class="font-bold text-lg text-gray-700">รายการข้อมูล</h2>
-           <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-               <div class="relative w-full sm:w-56">
+        <div class="flex flex-col xl:flex-row justify-between items-center gap-3 mb-4 bg-gray-50 p-3 rounded-lg border border-gray-200">
+           <h2 id="currentGroupTitle" class="font-bold text-lg text-gray-700 whitespace-nowrap">รายการข้อมูล</h2>
+           <div class="flex flex-col sm:flex-row gap-2 w-full xl:w-auto">
+               
+               <div class="relative w-full sm:w-48">
                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                    <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                 </div>
+                 <input type="text" id="searchBranch" onkeyup="filterTableRows()" placeholder="ค้นหาสาขา..." class="pl-9 pr-4 py-2 border border-gray-300 rounded-lg w-full text-sm focus:ring-2 focus:ring-blue-200 outline-none transition">
+               </div>
+
+               <div class="relative w-full sm:w-48">
+                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
                  </div>
                  <input type="text" id="searchDept" onkeyup="filterTableRows()" placeholder="ค้นหาแผนก..." class="pl-9 pr-4 py-2 border border-gray-300 rounded-lg w-full text-sm focus:ring-2 focus:ring-blue-200 outline-none transition">
                </div>
-               <div class="relative w-full sm:w-56">
+
+               <div class="relative w-full sm:w-48">
                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                  </div>
-                 <input type="text" id="searchName" onkeyup="filterTableRows()" placeholder="ค้นหาชื่อพนักงาน..." class="pl-9 pr-4 py-2 border border-gray-300 rounded-lg w-full text-sm focus:ring-2 focus:ring-blue-200 outline-none transition">
+                 <input type="text" id="searchName" onkeyup="filterTableRows()" placeholder="ค้นหาชื่อ..." class="pl-9 pr-4 py-2 border border-gray-300 rounded-lg w-full text-sm focus:ring-2 focus:ring-blue-200 outline-none transition">
                </div>
            </div>
         </div>
@@ -270,7 +279,7 @@
           else if (status.includes("ป่วย") || status.includes("sick")) { d.sick++; total.sick++; }
           else if (status.includes("กิจ") || status.includes("personal")) { d.personal++; total.personal++; }
           else if (status.includes("พักร้อน") || status.includes("vacation")) { d.vacation++; total.vacation++; }
-          else if (status.includes("ลาออก")) {} // ไม่นับในสถิติสูญเสียหลัก (ตามนโยบาย)
+          else if (status.includes("ลาออก")) {} 
           else { d.noInfo++; total.noInfo++; }
        });
        let reportArray = Object.values(reportMap).sort((a, b) => (b.count - a.count) || a.name.localeCompare(b.name));
@@ -435,20 +444,26 @@
          .finally(() => document.getElementById('savingOverlay').classList.add('hidden'));
     }
 
-    // --- แก้ไขฟังก์ชัน filterTableRows เพื่อรองรับ 2 ตัวกรอง ---
+    // --- แก้ไขฟังก์ชัน filterTableRows เพื่อรองรับ 3 ตัวกรอง ---
     function filterTableRows() {
+       // รับค่าจาก input ทั้ง 3 ช่อง
+       const branchFilter = document.getElementById('searchBranch').value.toUpperCase();
        const deptFilter = document.getElementById('searchDept').value.toUpperCase();
        const nameFilter = document.getElementById('searchName').value.toUpperCase();
+       
        const rows = document.getElementsByClassName('search-row');
        let visible = 0;
-       for (let row of rows) {
-          const name = row.cells[1].innerText.toUpperCase();
-          const dept = row.cells[2].innerText.toUpperCase();
-          
-          const matchDept = dept.includes(deptFilter);
-          const matchName = name.includes(nameFilter);
 
-          if (matchDept && matchName) { 
+       for (let row of rows) {
+          const name = row.cells[1].innerText.toUpperCase(); // คอลัมน์ชื่อ
+          const dept = row.cells[2].innerText.toUpperCase(); // คอลัมน์แผนก (ใช้ค้นหาทั้ง แผนก และ สาขา)
+          
+          // ตรวจสอบเงื่อนไข (ต้องตรงกันทั้งหมด ถึงจะแสดง)
+          const matchBranch = dept.includes(branchFilter); // "สาขา" ค้นใน dept
+          const matchDept = dept.includes(deptFilter);     // "แผนก" ค้นใน dept
+          const matchName = name.includes(nameFilter);     // "ชื่อ" ค้นใน name
+
+          if (matchBranch && matchDept && matchName) { 
               row.style.display = ''; 
               visible++; 
           } else { 
