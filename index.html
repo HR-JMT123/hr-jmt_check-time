@@ -61,7 +61,7 @@
       </div>
       <div class="flex items-center gap-2 bg-gray-50 p-2 rounded-lg border border-gray-200 shadow-sm">
         <label for="datePicker" class="text-sm font-semibold text-gray-700 pl-2">เลือกวันที่:</label>
-        <input type="date" id="datePicker" class="border border-gray-300 rounded px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+        <input type="date" id="datePicker" disabled class="border border-gray-300 rounded px-3 py-1.5 text-sm bg-gray-100 text-gray-500 cursor-not-allowed outline-none">
         <button onclick="loadReport()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-1.5 rounded text-sm transition-colors shadow-sm">ค้นหา</button>
       </div>
     </div>
@@ -444,24 +444,18 @@
          .finally(() => document.getElementById('savingOverlay').classList.add('hidden'));
     }
 
-    // --- แก้ไขฟังก์ชัน filterTableRows เพื่อรองรับ 3 ตัวกรอง ---
     function filterTableRows() {
-       // รับค่าจาก input ทั้ง 3 ช่อง
        const branchFilter = document.getElementById('searchBranch').value.toUpperCase();
        const deptFilter = document.getElementById('searchDept').value.toUpperCase();
        const nameFilter = document.getElementById('searchName').value.toUpperCase();
-       
        const rows = document.getElementsByClassName('search-row');
        let visible = 0;
-
        for (let row of rows) {
-          const name = row.cells[1].innerText.toUpperCase(); // คอลัมน์ชื่อ
-          const dept = row.cells[2].innerText.toUpperCase(); // คอลัมน์แผนก (ใช้ค้นหาทั้ง แผนก และ สาขา)
-          
-          // ตรวจสอบเงื่อนไข (ต้องตรงกันทั้งหมด ถึงจะแสดง)
-          const matchBranch = dept.includes(branchFilter); // "สาขา" ค้นใน dept
-          const matchDept = dept.includes(deptFilter);     // "แผนก" ค้นใน dept
-          const matchName = name.includes(nameFilter);     // "ชื่อ" ค้นใน name
+          const name = row.cells[1].innerText.toUpperCase();
+          const dept = row.cells[2].innerText.toUpperCase();
+          const matchBranch = dept.includes(branchFilter);
+          const matchDept = dept.includes(deptFilter);
+          const matchName = name.includes(nameFilter);
 
           if (matchBranch && matchDept && matchName) { 
               row.style.display = ''; 
