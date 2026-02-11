@@ -153,14 +153,9 @@
   </div>
 
   <script>
-    // ************************************************************
-    //  วาง URL ของ Web App (Deploy as Web App) ตรงนี้
-    // ************************************************************
     const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbywKWNz1W35NDpjpzkA4NqmbUIdzCNClEKlXtejPh0XDLlfgg5YVJbfKzilisV-8B0u/exec'; 
 
-    // --- Helper Function for API Call ---
     async function callApi(action, payload = {}) {
-        // ใช้ text/plain เพื่อเลี่ยง Preflight CORS ของบาง browser
         const response = await fetch(APPS_SCRIPT_URL, {
             method: 'POST',
             body: JSON.stringify({ action, ...payload })
@@ -170,13 +165,11 @@
         return result.data;
     }
 
-    // --- Global Variables ---
     let globalDetails = [];
     let groupedData = {};
     let currentActiveGroup = 'รอตรวจสอบสถานะ';
     let pendingRowIndex = null, pendingStatusValue = null, pendingSelectElement = null; 
 
-    // --- LOGIN LOGIC ---
     function handleLogin() {
       const code = document.getElementById('empCode').value;
       if (!code) { Swal.fire({ icon: 'warning', title: 'กรุณากรอกรหัสพนักงาน', confirmButtonColor: '#2563eb' }); return; }
@@ -208,7 +201,6 @@
     }
     document.getElementById('empCode').addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
 
-    // --- TABS & LOADING ---
     function switchTab(tabName) {
       const pSum = document.getElementById('pageSummary');
       const pDet = document.getElementById('pageDetail');
@@ -246,7 +238,6 @@
       initDetailGrouping();
     }
 
-    // --- FUNCTION TO CALCULATE SUMMARY LOCALLY ---
     function calculateSummaryFromDetails(details) {
        let reportMap = {};
        let total = { count: 0, absent: 0, late: 0, sick: 0, personal: 0, vacation: 0, switchHoliday: 0, noInfo: 0 };
@@ -267,6 +258,7 @@
           else if (status.includes("ป่วย") || status.includes("sick")) { d.sick++; total.sick++; }
           else if (status.includes("กิจ") || status.includes("personal")) { d.personal++; total.personal++; }
           else if (status.includes("พักร้อน") || status.includes("vacation")) { d.vacation++; total.vacation++; }
+          else if (status.includes("ลาออก")) {} // ไม่นับในสถิติสูญเสียหลัก (ตามนโยบาย)
           else { d.noInfo++; total.noInfo++; }
        });
        let reportArray = Object.values(reportMap).sort((a, b) => (b.count - a.count) || a.name.localeCompare(b.name));
@@ -294,7 +286,6 @@
        return rawName; 
     }
 
-    // --- SUMMARY TABLE RENDER ---
     function renderSummaryTable(report, total) {
       const tbody = document.getElementById('tableBody');
       const tfoot = document.getElementById('tableFooter');
@@ -323,7 +314,6 @@
         </tr>`;
     }
 
-    // --- GROUPING LOGIC ---
     function initDetailGrouping() {
       groupedData = { 'รอตรวจสอบสถานะ': [], 'มาสาย': [], 'ขาดงาน': [], 'ลางาน': [], 'สลับวันหยุด': [], 'ทำงาน': [] };
       globalDetails.sort((a, b) => a.dept.localeCompare(b.dept) || a.name.localeCompare(b.name));
@@ -374,16 +364,30 @@
       if (!items || items.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-gray-400">ไม่มีรายชื่อในกลุ่มนี้</td></tr>`; countDiv.innerText = '0 รายการ'; return; }
       let html = '';
       items.forEach((emp, i) => {
+        // --- ส่วนที่แก้ไข: เพิ่มตัวเลือก "ลาพักร้อน" และ "ลาออก/พ้นสภาพ" ---
         let statusDisplay = groupKey === 'รอตรวจสอบสถานะ' ? 
-            `<select onchange="saveStatus(${emp.rowIndex}, this.value, this)" class="w-full text-xs border border-yellow-400 bg-yellow-50 text-yellow-900 rounded p-1 focus:ring-2 focus:ring-yellow-500 outline-none cursor-pointer"><option value="" disabled selected>-- เลือกสถานะ --</option><option value="ทำงาน">ทำงาน</option><option value="มาสาย">มาสาย</option><option value="ลาป่วย">ลาป่วย</option><option value="ลากิจ">ลากิจ</option><option value="ขาดงาน">ขาดงาน</option><option value="สลับวันหยุด">สลับวันหยุด</option><option value="ลาคลอด">ลาคลอด</option><option value="ลาไม่รับค่าจ้าง">ลาไม่รับค่าจ้าง</option><option value="ลาบวช">ลาบวช</option></select>` :
+            `<select onchange="saveStatus(${emp.rowIndex}, this.value, this)" class="w-full text-xs border border-yellow-400 bg-yellow-50 text-yellow-900 rounded p-1 focus:ring-2 focus:ring-yellow-500 outline-none cursor-pointer">
+                <option value="" disabled selected>-- เลือกสถานะ --</option>
+                <option value="ทำงาน">ทำงาน</option>
+                <option value="มาสาย">มาสาย</option>
+                <option value="ลาป่วย">ลาป่วย</option>
+                <option value="ลากิจ">ลากิจ</option>
+                <option value="ลาพักร้อน">ลาพักร้อน</option>
+                <option value="ขาดงาน">ขาดงาน</option>
+                <option value="สลับวันหยุด">สลับวันหยุด</option>
+                <option value="ลาคลอด">ลาคลอด</option>
+                <option value="ลาไม่รับค่าจ้าง">ลาไม่รับค่าจ้าง</option>
+                <option value="ลาบวช">ลาบวช</option>
+                <option value="ลาออก/พ้นสภาพ">ลาออก/พ้นสภาพ</option>
+            </select>` :
             `<span class="px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-600">${emp.reportIn || '-'}</span>`;
+
         html += `<tr class="hover:bg-blue-50 transition-colors search-row"><td class="px-4 py-2 text-center text-gray-400 text-xs">${i + 1}</td><td class="px-4 py-2 font-medium text-gray-800">${emp.name}</td><td class="px-4 py-2 text-gray-500 text-xs">${emp.dept}</td><td class="px-4 py-2 text-center font-mono text-green-600">${emp.timeIn || '--:--'}</td><td class="px-4 py-2 text-center font-mono text-red-600">${emp.timeOut || '--:--'}</td><td class="px-4 py-2">${statusDisplay}</td></tr>`;
       });
       tbody.innerHTML = html;
       countDiv.innerText = `แสดงผล ${items.length} รายการ`;
     }
 
-    // --- MODAL & SAVE LOGIC ---
     function saveStatus(rowIndex, newValue, selectEl) {
        pendingRowIndex = rowIndex; pendingStatusValue = newValue; pendingSelectElement = selectEl;
        document.getElementById('confirmStatusText').innerText = newValue;
@@ -434,4 +438,3 @@
   </script>
 </body>
 </html>
-
