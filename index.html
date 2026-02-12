@@ -43,7 +43,7 @@
         <h2 class="text-2xl font-bold text-gray-800 mb-2">อยู่นอกเวลาทำการ</h2>
         <p class="text-gray-500 mb-6">ขออภัย ระบบเปิดให้บริการเฉพาะช่วงเวลา</p>
         <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-            <p class="text-3xl font-bold text-blue-700">08:30 - 23:00 น.</p>
+            <p class="text-3xl font-bold text-blue-700">04:00 - 08:50 น.</p>
         </div>
         <p class="text-sm text-gray-400">กรุณาเข้าใช้งานใหม่อีกครั้งในเวลาทำการ</p>
     </div>
@@ -56,7 +56,7 @@
       </div>
       <div class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">รหัสพนักงาน (เข้าใช้งานได้ตั้งแต่ 08.31 น. เป็นต้นไป)</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1">รหัสพนักงาน (ลงข้อมูลเวลา 08.50 น.)</label>
           <input type="password" id="empCode" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="ระบุรหัสพนักงาน...">
         </div>
         <button onclick="handleLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg shadow-md transition-colors flex justify-center items-center">
@@ -207,16 +207,18 @@
     let searchTimeout = null;
     let pendingRowIndex = null, pendingStatusValue = null, pendingSelectElement = null; 
 
-    // --- NEW: Time Check Logic (08:30 - 23:00) ---
+    // --- NEW: Time Check Logic (04:00 - 08:50) ---
     function checkOperatingHours() {
         const now = new Date();
         const hour = now.getHours();
         const minute = now.getMinutes();
         
-        // แปลงเวลาเป็นนาทีเพื่อเปรียบเทียบ (08:30 = 510 นาที, 23:00 = 1380 นาที)
+        // แปลงเวลาเป็นนาทีเพื่อเปรียบเทียบ
         const currentTotalMinutes = (hour * 60) + minute;
-        const startMinutes = (8 * 60) + 30; // 08:30
-        const endMinutes = (23 * 60);       // 23:00
+        
+        // *** แก้ไขเวลาที่นี่ ***
+        const startMinutes = (4 * 60);       // 04:00 (240 นาที)
+        const endMinutes = (8 * 60) + 50;    // 08:50 (530 นาที)
 
         const isAllowed = currentTotalMinutes >= startMinutes && currentTotalMinutes < endMinutes;
         const overlay = document.getElementById('timeBlockOverlay');
@@ -585,5 +587,3 @@
   </script>
 </body>
 </html>
-
-
