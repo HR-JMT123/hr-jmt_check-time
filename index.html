@@ -182,7 +182,7 @@
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx0FfmM-474hqQl1pjw541C2tMG7PMW6SuSRDHeqMd9Paj_af1jCGrBnzpcU6J-N21h/exec'; 
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbydEXn0te2qg7VRbeMUgpNh-SZCT7jxPI7jyCtwhELju9S2zBo5Rig_dm2LfL6hPEKI/exec'; 
 
     async function callApi(action, payload = {}) {
         const response = await fetch(APPS_SCRIPT_URL, {
@@ -200,6 +200,7 @@
     let currentActiveGroup = 'รอตรวจสอบสถานะ';
     let searchTimeout = null;
     let pendingRowIndex = null, pendingStatusValue = null, pendingSelectElement = null; 
+    let currentUserGroup = null; // [ADDED] เก็บ Group Department ของผู้ใช้งาน
 
     // --- ฟังก์ชันเช็คเวลาสำหรับการแก้ไข (Returns true/false) ---
     function isEditTime() {
@@ -231,7 +232,6 @@
     setInterval(updateUIBasedOnTime, 60000);
 
     function handleLogin() {
-      // เอา checkOperatingHours() ออกเพื่อให้เข้าสู่ระบบได้ตลอดเวลา
       const code = document.getElementById('empCode').value;
       if (!code) { Swal.fire({ icon: 'warning', title: 'กรุณากรอกรหัสพนักงาน', confirmButtonColor: '#2563eb' }); return; }
 
@@ -239,18 +239,22 @@
       document.getElementById('btnSpinner').classList.remove('hidden');
       
       callApi('checkLogin', { empId: code })
-        .then(isValid => {
+        .then(data => {
+            // [MODIFIED] รองรับการรับค่าเป็น Object { valid: true, group: '...' }
+            const isValid = (typeof data === 'object' && data.valid) || data === true;
+            
             if (isValid) {
+                // [ADDED] บันทึก Group ของผู้ใช้
+                currentUserGroup = (typeof data === 'object' && data.group) ? data.group : null;
+                
                 const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true });
                 Toast.fire({ icon: 'success', title: 'เข้าสู่ระบบสำเร็จ' });
 
                 document.getElementById('loginSection').classList.add('hidden');
                 document.getElementById('appSection').classList.remove('hidden');
                 
-                // อัพเดทสถานะแถบแจ้งเตือน
                 updateUIBasedOnTime();
 
-                // --- ตั้งค่าวันที่เป็น "วันนี้" ตามเวลาเครื่อง Client ---
                 const today = new Date();
                 const yyyy = today.getFullYear();
                 const mm = String(today.getMonth() + 1).padStart(2, '0');
@@ -290,7 +294,6 @@
     }
 
     function loadReport() {
-      // เอา checkOperatingHours ออก เพื่อให้โหลดข้อมูลได้ตลอด
       const dateVal = document.getElementById('datePicker').value;
       if (!dateVal) { Swal.fire({ icon: 'warning', title: 'กรุณาเลือกวันที่', confirmButtonColor: '#2563eb' }); return; }
       
@@ -304,11 +307,19 @@
     }
 
     function renderReport(data) {
-      globalDetails = data.details || [];
+      let rawDetails = data.details || [];
+      
+      // [MODIFIED] กรองข้อมูลตาม Group Department ของผู้ใช้งาน (ถ้ามีค่า currentUserGroup)
+      if (currentUserGroup) {
+          globalDetails = rawDetails.filter(item => item.groupDept == currentUserGroup);
+      } else {
+          // ถ้าไม่มี Group (Admin หรือหาไม่เจอ) แสดงทั้งหมด
+          globalDetails = rawDetails;
+      }
+
       const calculatedData = calculateSummaryFromDetails(globalDetails);
       renderSummaryTable(calculatedData.report, calculatedData.total);
       
-      // เตรียมข้อมูลสำหรับการแบ่งกลุ่ม
       prepareGroupingData();
     }
 
