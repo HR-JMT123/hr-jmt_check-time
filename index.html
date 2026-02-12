@@ -182,7 +182,7 @@
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbydEXn0te2qg7VRbeMUgpNh-SZCT7jxPI7jyCtwhELju9S2zBo5Rig_dm2LfL6hPEKI/exec'; 
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx-8V1riYcEGj5mETrTeq2AoRaMYSj0DUKikaYyotcg4XoivGMozFysJGF-WGAsEux0/exec'; 
 
     async function callApi(action, payload = {}) {
         const response = await fetch(APPS_SCRIPT_URL, {
@@ -194,41 +194,24 @@
         return result.data;
     }
 
-    // --- Global Variables Optimized ---
+    // --- Global Variables ---
     let globalDetails = [];
     let groupedData = {};
     let currentActiveGroup = 'รอตรวจสอบสถานะ';
     let searchTimeout = null;
     let pendingRowIndex = null, pendingStatusValue = null, pendingSelectElement = null; 
-    let currentUserGroup = null; // [ADDED] เก็บ Group Department ของผู้ใช้งาน
 
-    // --- ฟังก์ชันเช็คเวลาสำหรับการแก้ไข (Returns true/false) ---
     function isEditTime() {
         const now = new Date();
-        const hour = now.getHours();
-        const minute = now.getMinutes();
-        
-        // แปลงเวลาเป็นนาทีเพื่อเปรียบเทียบ
-        const currentTotalMinutes = (hour * 60) + minute;
-        
-        // เวลาอนุญาต: 04:00 - 08:50
-        const startMinutes = (4 * 60);       // 04:00
-        const endMinutes = (8 * 60) + 50;    // 08:50
-
-        return currentTotalMinutes >= startMinutes && currentTotalMinutes < endMinutes;
+        const currentTotalMinutes = (now.getHours() * 60) + now.getMinutes();
+        return currentTotalMinutes >= (4 * 60) && currentTotalMinutes < ((8 * 60) + 50);
     }
 
-    // ฟังก์ชันตรวจสอบ UI ทั่วไป
     function updateUIBasedOnTime() {
         const alertBox = document.getElementById('editTimeAlert');
-        if (isEditTime()) {
-            alertBox.classList.add('hidden');
-        } else {
-            alertBox.classList.remove('hidden');
-        }
+        isEditTime() ? alertBox.classList.add('hidden') : alertBox.classList.remove('hidden');
     }
     
-    // ตรวจสอบ UI ทุกนาที
     setInterval(updateUIBasedOnTime, 60000);
 
     function handleLogin() {
@@ -240,19 +223,13 @@
       
       callApi('checkLogin', { empId: code })
         .then(data => {
-            // [MODIFIED] รองรับการรับค่าเป็น Object { valid: true, group: '...' }
             const isValid = (typeof data === 'object' && data.valid) || data === true;
-            
             if (isValid) {
-                // [ADDED] บันทึก Group ของผู้ใช้
-                currentUserGroup = (typeof data === 'object' && data.group) ? data.group : null;
-                
-                const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true });
-                Toast.fire({ icon: 'success', title: 'เข้าสู่ระบบสำเร็จ' });
+                Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true })
+                    .fire({ icon: 'success', title: 'เข้าสู่ระบบสำเร็จ' });
 
                 document.getElementById('loginSection').classList.add('hidden');
                 document.getElementById('appSection').classList.remove('hidden');
-                
                 updateUIBasedOnTime();
 
                 const today = new Date();
@@ -266,9 +243,7 @@
                 Swal.fire({ icon: 'error', title: 'เข้าสู่ระบบไม่สำเร็จ', text: 'รหัสพนักงานไม่ถูกต้อง', confirmButtonColor: '#d33' });
             }
         })
-        .catch(err => {
-            Swal.fire({ icon: 'error', title: 'Error', text: err.message });
-        })
+        .catch(err => Swal.fire({ icon: 'error', title: 'Error', text: err.message }))
         .finally(() => {
             document.getElementById('btnText').innerText = 'เข้าสู่ระบบ';
             document.getElementById('btnSpinner').classList.add('hidden');
@@ -295,28 +270,25 @@
 
     function loadReport() {
       const dateVal = document.getElementById('datePicker').value;
+      const empCodeVal = document.getElementById('empCode').value; // [เพิ่ม] ส่ง empCode ไปให้ Server เช็ค Group เอง
+
       if (!dateVal) { Swal.fire({ icon: 'warning', title: 'กรุณาเลือกวันที่', confirmButtonColor: '#2563eb' }); return; }
       
       document.getElementById('loading').classList.remove('hidden');
       document.getElementById('tableBody').innerHTML = ''; 
       
-      callApi('getSummaryByDate', { dateStr: dateVal })
+      // ส่ง empId ไปพร้อมกับ dateStr
+      callApi('getSummaryByDate', { dateStr: dateVal, empId: empCodeVal })
         .then(data => renderReport(data))
         .catch(err => Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: err.message, confirmButtonColor: '#d33' }))
         .finally(() => document.getElementById('loading').classList.add('hidden'));
     }
 
     function renderReport(data) {
-      let rawDetails = data.details || [];
-      
-      // [MODIFIED] กรองข้อมูลตาม Group Department ของผู้ใช้งาน (ถ้ามีค่า currentUserGroup)
-      if (currentUserGroup) {
-          globalDetails = rawDetails.filter(item => item.groupDept == currentUserGroup);
-      } else {
-          // ถ้าไม่มี Group (Admin หรือหาไม่เจอ) แสดงทั้งหมด
-          globalDetails = rawDetails;
-      }
+      // ข้อมูลที่ได้มาถูกกรองเรียบร้อยแล้วจาก Server
+      globalDetails = data.details || [];
 
+      // ใช้ข้อมูลแสดงผลได้เลย ไม่ต้อง filter ซ้ำ
       const calculatedData = calculateSummaryFromDetails(globalDetails);
       renderSummaryTable(calculatedData.report, calculatedData.total);
       
@@ -399,16 +371,9 @@
         </tr>`;
     }
 
-    // --- OPTIMIZED LOGIC START ---
-
     function prepareGroupingData() {
-      // รีเซ็ตข้อมูลกลุ่ม
       groupedData = { 'รอตรวจสอบสถานะ': [], 'มาสาย': [], 'ขาดงาน': [], 'ลางาน': [], 'สลับวันหยุด': [], 'ทำงาน': [] };
-      
-      // เรียงลำดับข้อมูลก่อน
       globalDetails.sort((a, b) => a.dept.localeCompare(b.dept) || a.name.localeCompare(b.name));
-      
-      // จัดกลุ่มข้อมูลลง Array
       globalDetails.forEach(item => {
         const reportIn = (item.reportIn || "").toLowerCase();
         if (reportIn.includes("ทำงาน")) groupedData['ทำงาน'].push(item);
@@ -418,10 +383,7 @@
         else if (reportIn.includes("ลา") || (item.leaveStatus !== '-' && item.leaveStatus)) groupedData['ลางาน'].push(item);
         else groupedData['รอตรวจสอบสถานะ'].push(item);
       });
-
       renderFilterButtons();
-      
-      // เลือกกลุ่มเริ่มต้น
       selectGroup(groupedData['รอตรวจสอบสถานะ'].length > 0 ? 'รอตรวจสอบสถานะ' : 'ทำงาน');
     }
 
@@ -446,17 +408,13 @@
 
     function selectGroup(key) {
       currentActiveGroup = key;
-      // ปรับ UI ปุ่มกด
       document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('ring-4', 'ring-opacity-30', 'scale-105', 'font-bold'));
       const activeBtn = document.getElementById(`btn-${key}`);
       if(activeBtn) activeBtn.classList.add('ring-4', 'ring-opacity-30', 'scale-105', 'font-bold');
       document.getElementById('currentGroupTitle').innerText = `กลุ่ม: ${key}`;
-      
       document.getElementById('searchBranch').value = '';
       document.getElementById('searchDept').value = '';
       document.getElementById('searchName').value = '';
-
-      // Render ข้อมูล
       renderTableRows(groupedData[key], key);
     }
 
@@ -466,43 +424,33 @@
             const branchFilter = document.getElementById('searchBranch').value.toUpperCase();
             const deptFilter = document.getElementById('searchDept').value.toUpperCase();
             const nameFilter = document.getElementById('searchName').value.toUpperCase();
-            
             const filteredItems = groupedData[currentActiveGroup].filter(item => {
                  const name = (item.name || "").toUpperCase();
                  const dept = (item.dept || "").toUpperCase(); 
-                 
                  const matchBranch = dept.includes(branchFilter); 
                  const matchDept = dept.includes(deptFilter);
                  const matchName = name.includes(nameFilter);
                  return matchBranch && matchDept && matchName;
             });
-
             renderTableRows(filteredItems, currentActiveGroup);
-
         }, 300); 
     }
 
     function renderTableRows(items, groupKey) {
       const tbody = document.getElementById('detailTableBody');
       const countDiv = document.getElementById('detailCount');
-      
-      // *** เช็คเวลาว่าอนุญาตให้แก้ไขหรือไม่ ***
       const canEdit = isEditTime();
-      
       if (!items || items.length === 0) { 
           tbody.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-gray-400">ไม่พบข้อมูลในกลุ่มนี้</td></tr>`; 
           countDiv.innerText = '0 รายการ'; 
           return; 
       }
-
       const maxRender = 200;
       const displayItems = items.slice(0, maxRender);
       const isTrucated = items.length > maxRender;
-
       let html = '';
       displayItems.forEach((emp, i) => {
         let statusDisplay = groupKey === 'รอตรวจสอบสถานะ' ? 
-            // แก้ไข: ถ้า canEdit เป็นเท็จ ให้ใส่ disabled และเปลี่ยนสีพื้นหลัง
             `<select onchange="saveStatus(${emp.rowIndex}, this.value, this)" 
                 class="w-full text-xs border rounded p-1 outline-none transition-colors 
                 ${canEdit ? 'border-yellow-400 bg-yellow-50 text-yellow-900 focus:ring-2 focus:ring-yellow-500 cursor-pointer' : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'}"
@@ -531,23 +479,19 @@
             <td class="px-4 py-2">${statusDisplay}</td>
         </tr>`;
       });
-
       if(isTrucated) {
           html += `<tr><td colspan="6" class="py-4 text-center text-blue-600 bg-blue-50 font-bold cursor-help" title="กรุณาใช้ช่องค้นหาเพื่อเจาะจงรายชื่อ">ยังมีข้อมูลอีก ${items.length - maxRender} รายการ... (กรุณาใช้ช่องค้นหาเพื่อกรองข้อมูล)</td></tr>`;
       }
-
       tbody.innerHTML = html;
       countDiv.innerText = `แสดงผล ${displayItems.length} จากทั้งหมด ${items.length} รายการ`;
     }
 
     function saveStatus(rowIndex, newValue, selectEl) {
-       // *** ตรวจสอบเวลาอีกครั้งก่อนบันทึก (Security) ***
        if(!isEditTime()) { 
            Swal.fire({icon: 'error', title: 'ไม่อยู่ในเวลาทำการ', text: 'ระบบเปิดให้แก้ไขข้อมูลช่วงเวลา 04:00 - 08:50 น. เท่านั้น'});
-           selectEl.value = ""; // รีเซ็ตค่ากลับ
+           selectEl.value = ""; 
            return; 
        }
-
        pendingRowIndex = rowIndex; pendingStatusValue = newValue; pendingSelectElement = selectEl;
        document.getElementById('confirmStatusText').innerText = newValue;
        document.getElementById('customConfirmModal').classList.remove('hidden');
@@ -565,14 +509,11 @@
 
     function executeStatusUpdate() {
        if(pendingRowIndex === null || pendingStatusValue === null) return;
-       
-       // *** ตรวจสอบเวลาอีกครั้งก่อนส่ง API ***
        if(!isEditTime()) { 
            Swal.fire({icon: 'error', title: 'หมดเวลาแก้ไข', text: 'กรุณาทำรายการใหม่ในเวลา 04:00 - 08:50 น.'});
            closeConfirmModal();
            return;
        }
-
        const remarkInput = document.getElementById('remarkInput');
        const remark = remarkInput.value.trim();
        if (!remark) { remarkInput.classList.add('input-error'); document.getElementById('remarkError').classList.remove('hidden'); remarkInput.focus(); return; }
@@ -582,10 +523,9 @@
 
        callApi('updateStatus', { rowIndex: pendingRowIndex, newStatus: pendingStatusValue, remark: remark })
          .then(() => {
-            const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true });
-            Toast.fire({ icon: 'success', title: 'บันทึกข้อมูลเรียบร้อย' });
+            Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true })
+                .fire({ icon: 'success', title: 'บันทึกข้อมูลเรียบร้อย' });
             remarkInput.value = ''; remarkInput.classList.remove('input-error'); document.getElementById('remarkError').classList.add('hidden');
-            
             loadReport(); 
             pendingRowIndex = null; pendingStatusValue = null; pendingSelectElement = null;
          })
