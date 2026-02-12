@@ -33,21 +33,6 @@
 </head>
 <body class="min-h-screen">
 
-  <div id="timeBlockOverlay" class="fixed inset-0 bg-slate-900 z-[100] hidden flex flex-col items-center justify-center p-4 text-center">
-    <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full border-t-8 border-red-500 animate-[popIn_0.3s_ease-out]">
-        <div class="mb-6 flex justify-center">
-            <div class="bg-red-100 p-4 rounded-full">
-                <svg class="w-12 h-12 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            </div>
-        </div>
-        <h2 class="text-2xl font-bold text-gray-800 mb-2">อยู่นอกเวลาทำการ</h2>
-        <p class="text-gray-500 mb-6">ขออภัย ระบบเปิดให้บริการเฉพาะช่วงเวลา</p>
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-            <p class="text-3xl font-bold text-blue-700">04:00 - 08:50 น.</p>
-        </div>
-        <p class="text-sm text-gray-400">กรุณาเข้าใช้งานใหม่อีกครั้งในเวลาทำการ</p>
-    </div>
-  </div>
   <div id="loginSection" class="flex flex-col items-center justify-center min-h-screen p-4">
     <div class="login-box bg-white p-8 rounded-xl shadow-2xl w-full max-w-sm border border-gray-200">
       <div class="text-center mb-6">
@@ -56,8 +41,9 @@
       </div>
       <div class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">รหัสพนักงาน (ลงข้อมูลเวลา 08.50 น.)</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1">รหัสพนักงาน</label>
           <input type="password" id="empCode" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="ระบุรหัสพนักงาน...">
+          <p class="text-xs text-orange-500 mt-1">*แก้ไขสถานะได้เฉพาะเวลา 04:00 - 08:50 น.</p>
         </div>
         <button onclick="handleLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg shadow-md transition-colors flex justify-center items-center">
           <span id="btnText">เข้าสู่ระบบ</span>
@@ -78,6 +64,14 @@
         <label for="datePicker" class="text-sm font-semibold text-gray-700 pl-2">เลือกวันที่:</label>
         <input type="date" id="datePicker" disabled class="border border-gray-300 rounded px-3 py-1.5 text-sm bg-gray-100 text-gray-500 cursor-not-allowed outline-none">
         <button onclick="loadReport()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-1.5 rounded text-sm transition-colors shadow-sm">ค้นหา</button>
+      </div>
+    </div>
+    
+    <div id="editTimeAlert" class="hidden bg-orange-50 border-l-4 border-orange-500 text-orange-700 p-4 rounded shadow-sm flex items-center" role="alert">
+      <svg class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+      <div>
+        <p class="font-bold">ระบบอยู่ในโหมด "ดูข้อมูลเท่านั้น"</p>
+        <p class="text-sm">การแก้ไขสถานะอนุญาตเฉพาะช่วงเวลา 04:00 - 08:50 น. เท่านั้น</p>
       </div>
     </div>
 
@@ -207,8 +201,8 @@
     let searchTimeout = null;
     let pendingRowIndex = null, pendingStatusValue = null, pendingSelectElement = null; 
 
-    // --- NEW: Time Check Logic (04:00 - 08:50) ---
-    function checkOperatingHours() {
+    // --- ฟังก์ชันเช็คเวลาสำหรับการแก้ไข (Returns true/false) ---
+    function isEditTime() {
         const now = new Date();
         const hour = now.getHours();
         const minute = now.getMinutes();
@@ -216,36 +210,28 @@
         // แปลงเวลาเป็นนาทีเพื่อเปรียบเทียบ
         const currentTotalMinutes = (hour * 60) + minute;
         
-        // *** แก้ไขเวลาที่นี่ ***
-        const startMinutes = (4 * 60);       // 04:00 (240 นาที)
-        const endMinutes = (8 * 60) + 50;    // 08:50 (530 นาที)
+        // เวลาอนุญาต: 04:00 - 08:50
+        const startMinutes = (4 * 60);       // 04:00
+        const endMinutes = (8 * 60) + 50;    // 08:50
 
-        const isAllowed = currentTotalMinutes >= startMinutes && currentTotalMinutes < endMinutes;
-        const overlay = document.getElementById('timeBlockOverlay');
-
-        if (!isAllowed) {
-            // นอกเวลาทำการ: แสดง Overlay บังหน้าจอ
-            overlay.classList.remove('hidden');
-            // ซ่อน Scrollbar ของ Body เพื่อไม่ให้เลื่อนดูได้
-            document.body.style.overflow = 'hidden';
-            return false;
-        } else {
-            // ในเวลาทำการ
-            overlay.classList.add('hidden');
-            document.body.style.overflow = 'auto';
-            return true;
-        }
+        return currentTotalMinutes >= startMinutes && currentTotalMinutes < endMinutes;
     }
 
-    // เรียกตรวจสอบทันทีเมื่อโหลดหน้าเว็บ
-    checkOperatingHours();
-    // ตั้งเวลาตรวจสอบทุกๆ 1 นาที (เผื่อเปิดค้างไว้ข้ามเวลา)
-    setInterval(checkOperatingHours, 60000);
+    // ฟังก์ชันตรวจสอบ UI ทั่วไป
+    function updateUIBasedOnTime() {
+        const alertBox = document.getElementById('editTimeAlert');
+        if (isEditTime()) {
+            alertBox.classList.add('hidden');
+        } else {
+            alertBox.classList.remove('hidden');
+        }
+    }
+    
+    // ตรวจสอบ UI ทุกนาที
+    setInterval(updateUIBasedOnTime, 60000);
 
     function handleLogin() {
-      // ตรวจสอบเวลาอีกครั้งก่อน login
-      if(!checkOperatingHours()) return; 
-
+      // เอา checkOperatingHours() ออกเพื่อให้เข้าสู่ระบบได้ตลอดเวลา
       const code = document.getElementById('empCode').value;
       if (!code) { Swal.fire({ icon: 'warning', title: 'กรุณากรอกรหัสพนักงาน', confirmButtonColor: '#2563eb' }); return; }
 
@@ -261,6 +247,9 @@
                 document.getElementById('loginSection').classList.add('hidden');
                 document.getElementById('appSection').classList.remove('hidden');
                 
+                // อัพเดทสถานะแถบแจ้งเตือน
+                updateUIBasedOnTime();
+
                 // --- ตั้งค่าวันที่เป็น "วันนี้" ตามเวลาเครื่อง Client ---
                 const today = new Date();
                 const yyyy = today.getFullYear();
@@ -301,9 +290,7 @@
     }
 
     function loadReport() {
-      // ตรวจสอบเวลาอีกครั้งก่อนโหลดข้อมูล
-      if(!checkOperatingHours()) return;
-
+      // เอา checkOperatingHours ออก เพื่อให้โหลดข้อมูลได้ตลอด
       const dateVal = document.getElementById('datePicker').value;
       if (!dateVal) { Swal.fire({ icon: 'warning', title: 'กรุณาเลือกวันที่', confirmButtonColor: '#2563eb' }); return; }
       
@@ -321,7 +308,7 @@
       const calculatedData = calculateSummaryFromDetails(globalDetails);
       renderSummaryTable(calculatedData.report, calculatedData.total);
       
-      // เตรียมข้อมูลสำหรับการแบ่งกลุ่ม (ฟังก์ชันใหม่)
+      // เตรียมข้อมูลสำหรับการแบ่งกลุ่ม
       prepareGroupingData();
     }
 
@@ -423,7 +410,7 @@
 
       renderFilterButtons();
       
-      // *** เน้น: เลือกกลุ่ม 'รอตรวจสอบสถานะ' เป็นค่าเริ่มต้นเสมอ ถ้ามีข้อมูล ***
+      // เลือกกลุ่มเริ่มต้น
       selectGroup(groupedData['รอตรวจสอบสถานะ'].length > 0 ? 'รอตรวจสอบสถานะ' : 'ทำงาน');
     }
 
@@ -454,7 +441,6 @@
       if(activeBtn) activeBtn.classList.add('ring-4', 'ring-opacity-30', 'scale-105', 'font-bold');
       document.getElementById('currentGroupTitle').innerText = `กลุ่ม: ${key}`;
       
-      // ล้างค่าในช่องค้นหาเมื่อเปลี่ยน Tab
       document.getElementById('searchBranch').value = '';
       document.getElementById('searchDept').value = '';
       document.getElementById('searchName').value = '';
@@ -463,16 +449,13 @@
       renderTableRows(groupedData[key], key);
     }
 
-    // ฟังก์ชันค้นหาแบบใหม่
     function handleSearch() {
         clearTimeout(searchTimeout);
-        // รอ 300ms หลังพิมพ์เสร็จค่อยทำงาน เพื่อลดภาระเครื่อง
         searchTimeout = setTimeout(() => {
             const branchFilter = document.getElementById('searchBranch').value.toUpperCase();
             const deptFilter = document.getElementById('searchDept').value.toUpperCase();
             const nameFilter = document.getElementById('searchName').value.toUpperCase();
             
-            // กรองข้อมูลจาก Array โดยตรง (เร็วกว่าไปยุ่งกับ Table DOM)
             const filteredItems = groupedData[currentActiveGroup].filter(item => {
                  const name = (item.name || "").toUpperCase();
                  const dept = (item.dept || "").toUpperCase(); 
@@ -492,13 +475,15 @@
       const tbody = document.getElementById('detailTableBody');
       const countDiv = document.getElementById('detailCount');
       
+      // *** เช็คเวลาว่าอนุญาตให้แก้ไขหรือไม่ ***
+      const canEdit = isEditTime();
+      
       if (!items || items.length === 0) { 
           tbody.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-gray-400">ไม่พบข้อมูลในกลุ่มนี้</td></tr>`; 
           countDiv.innerText = '0 รายการ'; 
           return; 
       }
 
-      // *** Performance Limit: Render สูงสุด 200 รายการเพื่อไม่ให้ Browser ค้าง ***
       const maxRender = 200;
       const displayItems = items.slice(0, maxRender);
       const isTrucated = items.length > maxRender;
@@ -506,8 +491,12 @@
       let html = '';
       displayItems.forEach((emp, i) => {
         let statusDisplay = groupKey === 'รอตรวจสอบสถานะ' ? 
-            `<select onchange="saveStatus(${emp.rowIndex}, this.value, this)" class="w-full text-xs border border-yellow-400 bg-yellow-50 text-yellow-900 rounded p-1 focus:ring-2 focus:ring-yellow-500 outline-none cursor-pointer">
-                <option value="" disabled selected>-- เลือกสถานะ --</option>
+            // แก้ไข: ถ้า canEdit เป็นเท็จ ให้ใส่ disabled และเปลี่ยนสีพื้นหลัง
+            `<select onchange="saveStatus(${emp.rowIndex}, this.value, this)" 
+                class="w-full text-xs border rounded p-1 outline-none transition-colors 
+                ${canEdit ? 'border-yellow-400 bg-yellow-50 text-yellow-900 focus:ring-2 focus:ring-yellow-500 cursor-pointer' : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'}"
+                ${canEdit ? '' : 'disabled'}>
+                <option value="" disabled selected>${canEdit ? '-- เลือกสถานะ --' : '-- ปิดปรับปรุงสถานะ --'}</option>
                 <option value="ทำงาน">ทำงาน</option>
                 <option value="มาสาย">มาสาย</option>
                 <option value="ลาป่วย">ลาป่วย</option>
@@ -541,8 +530,12 @@
     }
 
     function saveStatus(rowIndex, newValue, selectEl) {
-       // ตรวจสอบเวลาก่อนบันทึก
-       if(!checkOperatingHours()) { selectEl.value = ""; return; }
+       // *** ตรวจสอบเวลาอีกครั้งก่อนบันทึก (Security) ***
+       if(!isEditTime()) { 
+           Swal.fire({icon: 'error', title: 'ไม่อยู่ในเวลาทำการ', text: 'ระบบเปิดให้แก้ไขข้อมูลช่วงเวลา 04:00 - 08:50 น. เท่านั้น'});
+           selectEl.value = ""; // รีเซ็ตค่ากลับ
+           return; 
+       }
 
        pendingRowIndex = rowIndex; pendingStatusValue = newValue; pendingSelectElement = selectEl;
        document.getElementById('confirmStatusText').innerText = newValue;
@@ -561,8 +554,13 @@
 
     function executeStatusUpdate() {
        if(pendingRowIndex === null || pendingStatusValue === null) return;
-       // ตรวจสอบเวลาก่อนส่งข้อมูล
-       if(!checkOperatingHours()) return;
+       
+       // *** ตรวจสอบเวลาอีกครั้งก่อนส่ง API ***
+       if(!isEditTime()) { 
+           Swal.fire({icon: 'error', title: 'หมดเวลาแก้ไข', text: 'กรุณาทำรายการใหม่ในเวลา 04:00 - 08:50 น.'});
+           closeConfirmModal();
+           return;
+       }
 
        const remarkInput = document.getElementById('remarkInput');
        const remark = remarkInput.value.trim();
@@ -577,7 +575,6 @@
             Toast.fire({ icon: 'success', title: 'บันทึกข้อมูลเรียบร้อย' });
             remarkInput.value = ''; remarkInput.classList.remove('input-error'); document.getElementById('remarkError').classList.add('hidden');
             
-            // โหลดข้อมูลใหม่เพื่ออัพเดทตาราง
             loadReport(); 
             pendingRowIndex = null; pendingStatusValue = null; pendingSelectElement = null;
          })
