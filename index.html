@@ -6,6 +6,7 @@
   <title>Time Attendance Report</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'Sarabun', sans-serif; background-color: #f1f5f9; }
@@ -60,10 +61,14 @@
         <h1 class="text-2xl font-bold text-gray-800">รายงาน % สูญเสียเวลาการทำงาน</h1>
         <p class="text-sm text-gray-500 mt-1">ข้อมูล Time Attendance แยกตามส่วนงาน</p>
       </div>
-      <div class="flex items-center gap-2 bg-gray-50 p-2 rounded-lg border border-gray-200 shadow-sm">
+      <div class="flex items-center gap-2 bg-gray-50 p-2 rounded-lg border border-gray-200 shadow-sm flex-wrap justify-center">
         <label for="datePicker" class="text-sm font-semibold text-gray-700 pl-2">เลือกวันที่:</label>
         <input type="date" id="datePicker" disabled class="border border-gray-300 rounded px-3 py-1.5 text-sm bg-gray-100 text-gray-500 cursor-not-allowed outline-none">
         <button onclick="loadReport()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-1.5 rounded text-sm transition-colors shadow-sm">ค้นหา</button>
+        <button onclick="exportExcel()" class="bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-1.5 rounded text-sm transition-colors shadow-sm flex items-center gap-1 ml-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            Export Excel
+        </button>
       </div>
     </div>
     
@@ -200,8 +205,12 @@
     let currentActiveGroup = 'รอตรวจสอบสถานะ';
     let searchTimeout = null;
     let pendingRowIndex = null, pendingStatusValue = null, pendingSelectElement = null; 
+    let loggedInEmpCode = ''; // ตัวแปรเก็บรหัสพนักงานที่ Login เข้ามา
 
+    // เพิ่มเงื่อนไข bypass สิทธิให้ HRJMT123
     function isEditTime() {
+        if (loggedInEmpCode === 'HRJMT123') return true; 
+
         const now = new Date();
         const currentTotalMinutes = (now.getHours() * 60) + now.getMinutes();
         return currentTotalMinutes >= (4 * 60) && currentTotalMinutes < ((8 * 60) + 50);
@@ -225,6 +234,9 @@
         .then(data => {
             const isValid = (typeof data === 'object' && data.valid) || data === true;
             if (isValid) {
+                // เก็บ User เพื่อนำไป Check สิทธิ Super Admin
+                loggedInEmpCode = code;
+
                 Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true })
                     .fire({ icon: 'success', title: 'เข้าสู่ระบบสำเร็จ' });
 
@@ -270,14 +282,13 @@
 
     function loadReport() {
       const dateVal = document.getElementById('datePicker').value;
-      const empCodeVal = document.getElementById('empCode').value; // [เพิ่ม] ส่ง empCode ไปให้ Server เช็ค Group เอง
+      const empCodeVal = document.getElementById('empCode').value; 
 
       if (!dateVal) { Swal.fire({ icon: 'warning', title: 'กรุณาเลือกวันที่', confirmButtonColor: '#2563eb' }); return; }
       
       document.getElementById('loading').classList.remove('hidden');
       document.getElementById('tableBody').innerHTML = ''; 
       
-      // ส่ง empId ไปพร้อมกับ dateStr
       callApi('getSummaryByDate', { dateStr: dateVal, empId: empCodeVal })
         .then(data => renderReport(data))
         .catch(err => Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: err.message, confirmButtonColor: '#d33' }))
@@ -285,10 +296,8 @@
     }
 
     function renderReport(data) {
-      // ข้อมูลที่ได้มาถูกกรองเรียบร้อยแล้วจาก Server
       globalDetails = data.details || [];
 
-      // ใช้ข้อมูลแสดงผลได้เลย ไม่ต้อง filter ซ้ำ
       const calculatedData = calculateSummaryFromDetails(globalDetails);
       renderSummaryTable(calculatedData.report, calculatedData.total);
       
@@ -440,35 +449,44 @@
       const tbody = document.getElementById('detailTableBody');
       const countDiv = document.getElementById('detailCount');
       const canEdit = isEditTime();
+      
       if (!items || items.length === 0) { 
           tbody.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-gray-400">ไม่พบข้อมูลในกลุ่มนี้</td></tr>`; 
           countDiv.innerText = '0 รายการ'; 
           return; 
       }
+      
       const maxRender = 200;
       const displayItems = items.slice(0, maxRender);
       const isTrucated = items.length > maxRender;
       let html = '';
+      
+      const isSuperAdmin = loggedInEmpCode === 'HRJMT123'; // เช็คสิทธิเปิด Dropdown ทุกแถว
+
       displayItems.forEach((emp, i) => {
-        let statusDisplay = groupKey === 'รอตรวจสอบสถานะ' ? 
+        // ให้ Super Admin เห็น Dropdown ทุก Group
+        let showDropdown = groupKey === 'รอตรวจสอบสถานะ' || isSuperAdmin;
+        let empStatus = emp.reportIn || "";
+
+        let statusDisplay = showDropdown ? 
             `<select onchange="saveStatus(${emp.rowIndex}, this.value, this)" 
                 class="w-full text-xs border rounded p-1 outline-none transition-colors 
                 ${canEdit ? 'border-yellow-400 bg-yellow-50 text-yellow-900 focus:ring-2 focus:ring-yellow-500 cursor-pointer' : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'}"
                 ${canEdit ? '' : 'disabled'}>
-                <option value="" disabled selected>${canEdit ? '-- เลือกสถานะ --' : '-- ปิดปรับปรุงสถานะ --'}</option>
-                <option value="ทำงาน">ทำงาน</option>
-                <option value="มาสาย">มาสาย</option>
-                <option value="ลาป่วย">ลาป่วย</option>
-                <option value="ลากิจ">ลากิจ</option>
-                <option value="ลาพักร้อน">ลาพักร้อน</option>
-                <option value="ขาดงาน">ขาดงาน</option>
-                <option value="สลับวันหยุด">สลับวันหยุด</option>
-                <option value="ลาคลอด">ลาคลอด</option>
-                <option value="ลาไม่รับค่าจ้าง">ลาไม่รับค่าจ้าง</option>
-                <option value="ลาบวช">ลาบวช</option>
-                <option value="ลาออก/พ้นสภาพ">ลาออก/พ้นสภาพ</option>
+                <option value="" disabled ${!empStatus ? 'selected' : ''}>${canEdit ? '-- เลือกสถานะ --' : '-- ปิดปรับปรุงสถานะ --'}</option>
+                <option value="ทำงาน" ${empStatus === 'ทำงาน' ? 'selected' : ''}>ทำงาน</option>
+                <option value="มาสาย" ${empStatus === 'มาสาย' ? 'selected' : ''}>มาสาย</option>
+                <option value="ลาป่วย" ${empStatus === 'ลาป่วย' ? 'selected' : ''}>ลาป่วย</option>
+                <option value="ลากิจ" ${empStatus === 'ลากิจ' ? 'selected' : ''}>ลากิจ</option>
+                <option value="ลาพักร้อน" ${empStatus === 'ลาพักร้อน' ? 'selected' : ''}>ลาพักร้อน</option>
+                <option value="ขาดงาน" ${empStatus === 'ขาดงาน' ? 'selected' : ''}>ขาดงาน</option>
+                <option value="สลับวันหยุด" ${empStatus === 'สลับวันหยุด' ? 'selected' : ''}>สลับวันหยุด</option>
+                <option value="ลาคลอด" ${empStatus === 'ลาคลอด' ? 'selected' : ''}>ลาคลอด</option>
+                <option value="ลาไม่รับค่าจ้าง" ${empStatus === 'ลาไม่รับค่าจ้าง' ? 'selected' : ''}>ลาไม่รับค่าจ้าง</option>
+                <option value="ลาบวช" ${empStatus === 'ลาบวช' ? 'selected' : ''}>ลาบวช</option>
+                <option value="ลาออก/พ้นสภาพ" ${empStatus === 'ลาออก/พ้นสภาพ' ? 'selected' : ''}>ลาออก/พ้นสภาพ</option>
             </select>` : 
-            `<span class="px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-600">${emp.reportIn || '-'}</span>`;
+            `<span class="px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-600">${empStatus || '-'}</span>`;
 
         html += `<tr class="hover:bg-blue-50 transition-colors">
             <td class="px-4 py-2 text-center text-gray-400 text-xs">${i + 1}</td>
@@ -531,6 +549,63 @@
          })
          .catch(err => Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ', text: err.message, confirmButtonColor: '#d33' }))
          .finally(() => document.getElementById('savingOverlay').classList.add('hidden'));
+    }
+
+    // --- ฟังก์ชันสำหรับ Export Excel ---
+    function exportExcel() {
+        if (!globalDetails || globalDetails.length === 0) {
+            Swal.fire({ icon: 'warning', title: 'ไม่มีข้อมูล', text: 'กรุณาค้นหาข้อมูลก่อนทำการ Export' });
+            return;
+        }
+
+        const dateVal = document.getElementById('datePicker').value || 'Report';
+
+        // ดึงข้อมูล Summary จากตารางที่มีในหน้าจอ
+        const summaryRows = [];
+        const tbodyRows = document.querySelectorAll('#tableBody tr');
+        tbodyRows.forEach(tr => {
+            const cols = tr.querySelectorAll('td');
+            if (cols.length > 1) { 
+                summaryRows.push({
+                    'ลำดับ': cols[0].innerText,
+                    'ส่วนงาน': cols[1].innerText,
+                    'จำนวนพนักงาน': cols[2].innerText,
+                    'ขาดงาน': cols[3].innerText,
+                    'มาสาย': cols[4].innerText,
+                    'ลาป่วย': cols[5].innerText,
+                    'ลากิจ': cols[6].innerText,
+                    'พักร้อน': cols[7].innerText,
+                    'สลับวันหยุด': cols[8].innerText,
+                    'ไม่แจ้งข้อมูล': cols[9].innerText,
+                    'Total Loss': cols[10].innerText,
+                    '% สูญเสียรวม': cols[18] ? cols[18].innerText : ''
+                });
+            }
+        });
+
+        // แมพข้อมูล Details ทั้งหมด (ไม่ได้อิงจากการ Search หรือ Filter หน้าจอ)
+        const detailRows = globalDetails.map((emp, index) => ({
+            'ลำดับ': index + 1,
+            'ชื่อ-นามสกุล': emp.name || '',
+            'แผนก': emp.dept || '',
+            'Time In': emp.timeIn || '',
+            'Time Out': emp.timeOut || '',
+            'สถานะ': emp.reportIn || ''
+        }));
+
+        const wb = XLSX.utils.book_new();
+
+        // นำข้อมูลเข้าสู่ Sheet
+        if(summaryRows.length > 0) {
+            const wsSummary = XLSX.utils.json_to_sheet(summaryRows);
+            XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
+        }
+        
+        const wsDetail = XLSX.utils.json_to_sheet(detailRows);
+        XLSX.utils.book_append_sheet(wb, wsDetail, "Details");
+
+        // สร้างไฟล์และดาวน์โหลด
+        XLSX.writeFile(wb, `TimeAttendance_${dateVal}.xlsx`);
     }
   </script>
 </body>
