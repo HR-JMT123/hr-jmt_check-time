@@ -65,7 +65,7 @@
         <label for="datePicker" class="text-sm font-semibold text-gray-700 pl-2">เลือกวันที่:</label>
         <input type="date" id="datePicker" disabled class="border border-gray-300 rounded px-3 py-1.5 text-sm bg-gray-100 text-gray-500 cursor-not-allowed outline-none">
         <button onclick="loadReport()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-1.5 rounded text-sm transition-colors shadow-sm">ค้นหา</button>
-        <button onclick="exportExcel()" class="bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-1.5 rounded text-sm transition-colors shadow-sm flex items-center gap-1 ml-2">
+        <button id="exportExcelBtn" onclick="exportExcel()" class="hidden bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-1.5 rounded text-sm transition-colors shadow-sm items-center gap-1 ml-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
             Export Excel
         </button>
@@ -235,6 +235,16 @@
             if (isValid) {
                 loggedInEmpCode = code;
 
+                // --- ตรวจสอบการแสดงผลปุ่ม Export Excel เฉพาะ HRJMT123 ---
+                const exportBtn = document.getElementById('exportExcelBtn');
+                if (loggedInEmpCode === 'HRJMT123') {
+                    exportBtn.classList.remove('hidden');
+                    exportBtn.classList.add('flex');
+                } else {
+                    exportBtn.classList.add('hidden');
+                    exportBtn.classList.remove('flex');
+                }
+
                 Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true })
                     .fire({ icon: 'success', title: 'เข้าสู่ระบบสำเร็จ' });
 
@@ -329,12 +339,11 @@
        return { report: reportArray, total: total };
     }
 
-    // --- แก้ไขเงื่อนไขการ Group แผนก เพื่ออุดรอยรั่วที่ทำให้หน้า Report เพิ่มแถวแตกย่อย ---
     function getDeptGroup(rawName) {
        if (!rawName) return 'ไม่ระบุ';
        const n = rawName.toUpperCase();
        if (n.includes("JAM ชั่วคราว")) return "พนักงานชั่วคราวรายวัน";
-       if (n.includes("ซื้อหนี้") || n.includes("รับจ้าง") || n.includes("รับราง")) return "Collection"; // ดักจับคำว่า 'รับราง' ด้วยเผื่อสะกดผิด
+       if (n.includes("ซื้อหนี้") || n.includes("รับจ้าง") || n.includes("รับราง")) return "Collection"; 
        if (n.includes("FCR") || n.includes("FIELD COLLECTOR") || n.includes("DEBT MANAGEMENT ADVISOR")) return "ภาคสนาม";
        if (n.includes("บังคับคดี")) return "บังคับคดี";
        if (n.includes("TRAINING") || n.includes("RECRUITMENT") || n.includes("HUMAN RESOURCES") || n.includes("EMPLOYEE RELATIONS")) return "HUMAN RESOURCES";
@@ -350,7 +359,7 @@
        if (n.includes("สาขา")) { 
            let parts = rawName.split("สาขา"); 
            if(parts.length > 0 && parts[0].trim() !== "") return parts[0].trim(); 
-           return "สาขา"; // ถ้าเจอคำว่า 'สาขา' เพียวๆ ให้ยุบรวมเข้า Group 'สาขา' ป้องกันชื่อแยกย่อย
+           return "สาขา";
        }
        return rawName.trim(); 
     }
