@@ -205,9 +205,8 @@
     let currentActiveGroup = 'รอตรวจสอบสถานะ';
     let searchTimeout = null;
     let pendingRowIndex = null, pendingStatusValue = null, pendingSelectElement = null; 
-    let loggedInEmpCode = ''; // ตัวแปรเก็บรหัสพนักงานที่ Login เข้ามา
+    let loggedInEmpCode = ''; 
 
-    // เพิ่มเงื่อนไข bypass สิทธิให้ HRJMT123
     function isEditTime() {
         if (loggedInEmpCode === 'HRJMT123') return true; 
 
@@ -234,7 +233,6 @@
         .then(data => {
             const isValid = (typeof data === 'object' && data.valid) || data === true;
             if (isValid) {
-                // เก็บ User เพื่อนำไป Check สิทธิ Super Admin
                 loggedInEmpCode = code;
 
                 Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true })
@@ -331,11 +329,12 @@
        return { report: reportArray, total: total };
     }
 
+    // --- แก้ไขเงื่อนไขการ Group แผนก เพื่ออุดรอยรั่วที่ทำให้หน้า Report เพิ่มแถวแตกย่อย ---
     function getDeptGroup(rawName) {
        if (!rawName) return 'ไม่ระบุ';
        const n = rawName.toUpperCase();
        if (n.includes("JAM ชั่วคราว")) return "พนักงานชั่วคราวรายวัน";
-       if (n.includes("ซื้อหนี้") || n.includes("รับจ้าง")) return "Collection";
+       if (n.includes("ซื้อหนี้") || n.includes("รับจ้าง") || n.includes("รับราง")) return "Collection"; // ดักจับคำว่า 'รับราง' ด้วยเผื่อสะกดผิด
        if (n.includes("FCR") || n.includes("FIELD COLLECTOR") || n.includes("DEBT MANAGEMENT ADVISOR")) return "ภาคสนาม";
        if (n.includes("บังคับคดี")) return "บังคับคดี";
        if (n.includes("TRAINING") || n.includes("RECRUITMENT") || n.includes("HUMAN RESOURCES") || n.includes("EMPLOYEE RELATIONS")) return "HUMAN RESOURCES";
@@ -348,8 +347,12 @@
        if (n.includes("คอมพิวเตอร์") || n.includes("IT SUPPORT")) return "คอมพิวเตอร์ / IT";
        if (n.includes("กฎหมาย")) return "กฎหมาย";
        if (n.includes("ธุรการพิเศษ")) return "ธุรการพิเศษ";
-       if (n.includes("สาขา")) { let parts = rawName.split("สาขา"); if(parts.length > 0 && parts[0].trim() !== "") return parts[0].trim(); }
-       return rawName; 
+       if (n.includes("สาขา")) { 
+           let parts = rawName.split("สาขา"); 
+           if(parts.length > 0 && parts[0].trim() !== "") return parts[0].trim(); 
+           return "สาขา"; // ถ้าเจอคำว่า 'สาขา' เพียวๆ ให้ยุบรวมเข้า Group 'สาขา' ป้องกันชื่อแยกย่อย
+       }
+       return rawName.trim(); 
     }
 
     function renderSummaryTable(report, total) {
@@ -461,10 +464,9 @@
       const isTrucated = items.length > maxRender;
       let html = '';
       
-      const isSuperAdmin = loggedInEmpCode === 'HRJMT123'; // เช็คสิทธิเปิด Dropdown ทุกแถว
+      const isSuperAdmin = loggedInEmpCode === 'HRJMT123';
 
       displayItems.forEach((emp, i) => {
-        // ให้ Super Admin เห็น Dropdown ทุก Group
         let showDropdown = groupKey === 'รอตรวจสอบสถานะ' || isSuperAdmin;
         let empStatus = emp.reportIn || "";
 
@@ -551,7 +553,6 @@
          .finally(() => document.getElementById('savingOverlay').classList.add('hidden'));
     }
 
-    // --- ฟังก์ชันสำหรับ Export Excel ---
     function exportExcel() {
         if (!globalDetails || globalDetails.length === 0) {
             Swal.fire({ icon: 'warning', title: 'ไม่มีข้อมูล', text: 'กรุณาค้นหาข้อมูลก่อนทำการ Export' });
@@ -560,7 +561,6 @@
 
         const dateVal = document.getElementById('datePicker').value || 'Report';
 
-        // ดึงข้อมูล Summary จากตารางที่มีในหน้าจอ
         const summaryRows = [];
         const tbodyRows = document.querySelectorAll('#tableBody tr');
         tbodyRows.forEach(tr => {
@@ -583,7 +583,6 @@
             }
         });
 
-        // แมพข้อมูล Details ทั้งหมด (ไม่ได้อิงจากการ Search หรือ Filter หน้าจอ)
         const detailRows = globalDetails.map((emp, index) => ({
             'ลำดับ': index + 1,
             'ชื่อ-นามสกุล': emp.name || '',
@@ -595,7 +594,6 @@
 
         const wb = XLSX.utils.book_new();
 
-        // นำข้อมูลเข้าสู่ Sheet
         if(summaryRows.length > 0) {
             const wsSummary = XLSX.utils.json_to_sheet(summaryRows);
             XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
@@ -604,7 +602,6 @@
         const wsDetail = XLSX.utils.json_to_sheet(detailRows);
         XLSX.utils.book_append_sheet(wb, wsDetail, "Details");
 
-        // สร้างไฟล์และดาวน์โหลด
         XLSX.writeFile(wb, `TimeAttendance_${dateVal}.xlsx`);
     }
   </script>
