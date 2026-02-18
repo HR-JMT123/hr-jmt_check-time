@@ -484,7 +484,7 @@
                 class="w-full text-xs border rounded p-1 outline-none transition-colors 
                 ${canEdit ? 'border-yellow-400 bg-yellow-50 text-yellow-900 focus:ring-2 focus:ring-yellow-500 cursor-pointer' : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'}"
                 ${canEdit ? '' : 'disabled'}>
-                <option value="" disabled ${!empStatus ? 'selected' : ''}>${canEdit ? '-- เลือกสถานะ --' : '-- ปิดปรับปรุงสถานะ --'}</option>
+                <option value="รอตรวจสอบสถานะ" ${(!empStatus || empStatus === 'รอตรวจสอบสถานะ') ? 'selected' : ''}>${canEdit ? 'รอตรวจสอบสถานะ' : '-- ปิดปรับปรุงสถานะ --'}</option>
                 <option value="ทำงาน" ${empStatus === 'ทำงาน' ? 'selected' : ''}>ทำงาน</option>
                 <option value="มาสาย" ${empStatus === 'มาสาย' ? 'selected' : ''}>มาสาย</option>
                 <option value="ลาป่วย" ${empStatus === 'ลาป่วย' ? 'selected' : ''}>ลาป่วย</option>
