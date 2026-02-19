@@ -59,8 +59,10 @@
       </div>
       <div class="flex items-center gap-2 bg-gray-50 p-2 rounded-lg border border-gray-200 shadow-sm flex-wrap justify-center">
         <label for="datePicker" class="text-sm font-semibold text-gray-700 pl-2">เลือกวันที่:</label>
-        <input type="date" id="datePicker" class="border border-gray-300 rounded px-3 py-1.5 text-sm outline-none">
-        <button onclick="loadReport()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-1.5 rounded text-sm transition-colors shadow-sm">ค้นหา</button>
+        
+        <input type="date" id="datePicker" class="border border-gray-300 rounded px-3 py-1.5 text-sm outline-none bg-gray-100 text-gray-500 cursor-not-allowed" disabled>
+        
+        <button onclick="loadReport()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-1.5 rounded text-sm transition-colors shadow-sm">อัปเดตข้อมูล</button>
         <button id="exportExcelBtn" onclick="exportExcel()" class="hidden bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-1.5 rounded text-sm transition-colors shadow-sm items-center gap-1 ml-2">
             Export Excel
         </button>
@@ -155,7 +157,7 @@
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwP3IWeu2V4agaXnebtnYUbceS68pwV-k0koFF17MWyLl4DrPJQvZbsBHMM4n7l-r-P/exec'; 
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxVejqzmE67WaxQKrOyenNK9jGWpwfqovzeMRa_XDB5kV8ht-q3X7maywrDCjRkGkRF/exec'; 
 
     let globalDetails = [];
     let loggedInEmpCode = ''; 
@@ -163,7 +165,6 @@
     let searchTimeout = null;
     let pendingRowIndex = null, pendingStatusValue = null, pendingSelectElement = null; 
 
-    // Time Check
     function isEditTime() {
         if (loggedInEmpCode === 'HRJMT123') return true; 
         const now = new Date();
@@ -176,7 +177,6 @@
     }
     setInterval(updateUIBasedOnTime, 60000);
 
-    // API Helper with Retry
     async function callApi(action, payload = {}, retries = 1) {
         try {
             const response = await fetch(APPS_SCRIPT_URL, {
@@ -195,7 +195,6 @@
         }
     }
 
-    // Login
     function handleLogin() {
       const code = document.getElementById('empCode').value;
       if (!code) { Swal.fire('Warning', 'กรุณากรอกรหัสพนักงาน', 'warning'); return; }
@@ -210,8 +209,14 @@
                 document.getElementById('loginSection').classList.add('hidden');
                 document.getElementById('appSection').classList.remove('hidden');
                 updateUIBasedOnTime();
+                
+                // Set Date to Today
                 const d = new Date();
-                document.getElementById('datePicker').value = d.toISOString().split('T')[0];
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                document.getElementById('datePicker').value = `${yyyy}-${mm}-${dd}`;
+                
                 loadReport();
             } else {
                 Swal.fire('Error', 'รหัสพนักงานไม่ถูกต้อง', 'error');
@@ -224,7 +229,6 @@
         });
     }
 
-    // Load Data
     function loadReport() {
         const dateVal = document.getElementById('datePicker').value;
         if (!dateVal) return;
@@ -241,7 +245,6 @@
             .finally(() => document.getElementById('loading').classList.add('hidden'));
     }
 
-    // Render Logic
     function renderAll(reportData, totalData) {
         if(!reportData) {
             const calc = calculateSummaryFromDetails(globalDetails);
@@ -280,7 +283,6 @@
        return { report: Object.values(summary).sort((a,b)=>b.count-a.count), total: total };
     }
 
-    // Optimistic Update
     function executeStatusUpdate() {
        if(pendingRowIndex === null || pendingStatusValue === null) return;
        
@@ -297,21 +299,17 @@
            return; 
        }
        
-       // 1. Close Modal
        document.getElementById('customConfirmModal').classList.add('hidden');
 
-       // 2. Update Local Data Immediately
        const targetIndex = globalDetails.findIndex(x => x.rowIndex === pendingRowIndex);
        if (targetIndex > -1) {
            globalDetails[targetIndex].reportIn = pendingStatusValue;
        }
-       renderAll(); // Re-render tables
+       renderAll(); 
 
-       // 3. Notify User
        const toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
        toast.fire({ icon: 'info', title: 'กำลังบันทึก...' });
 
-       // 4. Send to Server (Background)
        const payload = { rowIndex: pendingRowIndex, newStatus: pendingStatusValue, remark: remark };
        
        remarkInput.value = ''; 
@@ -328,7 +326,6 @@
          });
     }
 
-    // Helper Functions
     function switchTab(tabName) {
       const pSum = document.getElementById('pageSummary');
       const pDet = document.getElementById('pageDetail');
@@ -418,9 +415,11 @@
         const isSuper = loggedInEmpCode === 'HRJMT123';
         const showDrop = groupKey === 'รอตรวจสอบสถานะ' || isSuper;
         const st = emp.reportIn || "รอตรวจสอบสถานะ";
+        
+        // --- แก้ไข Dropdown: เปลี่ยนข้อความและ Value เป็น "รอตรวจสอบสถานะ" ---
         const drop = showDrop ? 
             `<select onchange="saveStatus(${emp.rowIndex}, this.value, this)" class="w-full text-xs border rounded p-1 outline-none ${canEdit?'border-yellow-400 bg-yellow-50 cursor-pointer':'bg-gray-100 cursor-not-allowed'}" ${canEdit?'':'disabled'}>
-                <option value="รอตรวจสอบสถานะ" ${st==='รอตรวจสอบสถานะ'?'selected':''}>รอตรวจสอบ</option>
+                <option value="รอตรวจสอบสถานะ" ${(st==='รอตรวจสอบสถานะ' || st==='รอตรวจสอบ')?'selected':''}>รอตรวจสอบสถานะ</option>
                 <option value="ทำงาน" ${st==='ทำงาน'?'selected':''}>ทำงาน</option>
                 <option value="มาสาย" ${st==='มาสาย'?'selected':''}>มาสาย</option>
                 <option value="ลาป่วย" ${st==='ลาป่วย'?'selected':''}>ลาป่วย</option>
