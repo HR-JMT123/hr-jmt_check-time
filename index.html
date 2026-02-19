@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Time Attendance Report</title>
+  <title>Time Attendance Report (Today Only)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -38,7 +38,7 @@
     <div class="login-box bg-white p-8 rounded-xl shadow-2xl w-full max-w-sm border border-gray-200">
       <div class="text-center mb-6">
         <h1 class="text-2xl font-bold text-gray-800">ระบบรายงานเวลา HR</h1>
-        <p class="text-gray-500 text-sm mt-1">กรุณายืนยันตัวตนเพื่อเข้าใช้งาน</p>
+        <p class="text-gray-500 text-sm mt-1">ข้อมูลประจำวันที่ <span id="loginDateText" class="text-blue-600 font-bold"></span></p>
       </div>
       <div class="space-y-4">
         <div>
@@ -51,7 +51,7 @@
           <svg id="btnSpinner" class="animate-spin ml-2 h-4 w-4 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
         </button>
       </div>
-      <div class="mt-6 text-center text-xs text-gray-400">Internal Use Only</div>
+      <div class="mt-6 text-center text-xs text-gray-400">Internal Use Only (v.Optimized)</div>
     </div>
   </div>
 
@@ -59,16 +59,21 @@
     <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
       <div>
         <h1 class="text-2xl font-bold text-gray-800">รายงาน % สูญเสียเวลาการทำงาน</h1>
-        <p class="text-sm text-gray-500 mt-1">ข้อมูล Time Attendance แยกตามส่วนงาน</p>
+        <p class="text-sm text-gray-500 mt-1">ข้อมูลประจำวันที่: <span id="displayDate" class="font-bold text-blue-700"></span></p>
       </div>
       <div class="flex items-center gap-2 bg-gray-50 p-2 rounded-lg border border-gray-200 shadow-sm flex-wrap justify-center">
-        <label for="datePicker" class="text-sm font-semibold text-gray-700 pl-2">เลือกวันที่:</label>
-        <input type="date" id="datePicker" disabled class="border border-gray-300 rounded px-3 py-1.5 text-sm bg-gray-100 text-gray-500 cursor-not-allowed outline-none">
-        <button onclick="loadReport()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-1.5 rounded text-sm transition-colors shadow-sm">ค้นหา</button>
-        <button id="exportExcelBtn" onclick="exportExcel()" class="hidden bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-1.5 rounded text-sm transition-colors shadow-sm items-center gap-1 ml-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-            Export Excel
-        </button>
+         <input type="hidden" id="datePicker">
+         
+         <button onclick="forceRefresh()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-1.5 rounded text-sm transition-colors shadow-sm flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            อัปเดตข้อมูลล่าสุด
+         </button>
+
+         <button id="exportExcelBtn" onclick="exportExcel()" class="hidden bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-1.5 rounded text-sm transition-colors shadow-sm items-center gap-1 ml-2">
+             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+             Export Excel
+         </button>
+         <button onclick="handleLogout()" class="text-red-500 hover:text-red-700 text-sm font-medium px-3 ml-2 underline">ออกจากระบบ</button>
       </div>
     </div>
     
@@ -87,7 +92,7 @@
 
     <div id="loading" class="hidden py-12 text-center">
       <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-gray-200 border-t-blue-600"></div>
-      <p class="mt-3 text-gray-500 font-medium">กำลังประมวลผลข้อมูล...</p>
+      <p class="mt-3 text-gray-500 font-medium">กำลังโหลดข้อมูล... <br><span class="text-xs text-gray-400">(อาจใช้เวลาสักครู่เนื่องจากผู้ใช้งานจำนวนมาก)</span></p>
     </div>
     
     <div id="savingOverlay" class="fixed inset-0 bg-black bg-opacity-40 z-[70] hidden flex items-center justify-center backdrop-blur-sm transition-all">
@@ -120,7 +125,10 @@
 
     <div id="pageSummary" class="block space-y-4 animate-[fadeIn_0.3s_ease-out]">
       <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
-        <div class="p-4 border-b border-gray-200 bg-blue-50"><h2 class="font-bold text-lg text-blue-900">ตารางแสดงสถิติพนักงานประจำวัน</h2></div>
+        <div class="p-4 border-b border-gray-200 bg-blue-50 flex justify-between items-center">
+            <h2 class="font-bold text-lg text-blue-900">ตารางแสดงสถิติพนักงานประจำวัน</h2>
+            <span class="text-xs text-gray-500" id="lastUpdateSpan"></span>
+        </div>
         <div class="overflow-x-auto">
           <table class="report-table">
             <thead>
@@ -189,14 +197,24 @@
   <script>
     const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx-8V1riYcEGj5mETrTeq2AoRaMYSj0DUKikaYyotcg4XoivGMozFysJGF-WGAsEux0/exec'; 
 
-    async function callApi(action, payload = {}) {
-        const response = await fetch(APPS_SCRIPT_URL, {
-            method: 'POST',
-            body: JSON.stringify({ action, ...payload })
-        });
-        const result = await response.json();
-        if (result.status === 'error') throw new Error(result.message);
-        return result.data;
+    // --- Optimization: Retry Logic for High Traffic ---
+    async function callApi(action, payload = {}, retries = 2) {
+        try {
+            const response = await fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action, ...payload })
+            });
+            const result = await response.json();
+            if (result.status === 'error') throw new Error(result.message);
+            return result.data;
+        } catch (err) {
+            if (retries > 0) {
+                console.warn(`API Failed, Retrying... (${retries} left)`);
+                await new Promise(r => setTimeout(r, 1000)); // Wait 1 sec
+                return callApi(action, payload, retries - 1);
+            }
+            throw err;
+        }
     }
 
     // --- Global Variables ---
@@ -206,6 +224,25 @@
     let searchTimeout = null;
     let pendingRowIndex = null, pendingStatusValue = null, pendingSelectElement = null; 
     let loggedInEmpCode = ''; 
+    const CACHE_KEY_PREFIX = 'HR_REPORT_DATA_';
+    const CACHE_DURATION = 60 * 1000; // Cache 60 seconds (ลดโหลด Server)
+
+    // --- Init ---
+    window.onload = function() {
+        // Set today's date text
+        const todayStr = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+        document.getElementById('loginDateText').innerText = todayStr;
+        document.getElementById('displayDate').innerText = todayStr;
+
+        // Auto-Login Check (SessionStorage)
+        const sessionUser = sessionStorage.getItem('hr_session_user');
+        if(sessionUser) {
+            document.getElementById('empCode').value = sessionUser;
+            handleLogin(true); // skip api check if possible or auto-trigger
+        }
+        
+        updateUIBasedOnTime();
+    };
 
     function isEditTime() {
         if (loggedInEmpCode === 'HRJMT123') return true; 
@@ -222,9 +259,16 @@
     
     setInterval(updateUIBasedOnTime, 60000);
 
-    function handleLogin() {
+    function handleLogin(isAuto = false) {
       const code = document.getElementById('empCode').value;
       if (!code) { Swal.fire({ icon: 'warning', title: 'กรุณากรอกรหัสพนักงาน', confirmButtonColor: '#2563eb' }); return; }
+
+      // Skip API call if auto-login from session (Assume valid if session exists to speed up)
+      // แต่ถ้าเป็นการกดปุ่มเอง จะเรียก API เพื่อความชัวร์
+      if(isAuto && sessionStorage.getItem('hr_session_valid') === 'true') {
+          proceedLogin(code);
+          return;
+      }
 
       document.getElementById('btnText').innerText = 'ตรวจสอบ...';
       document.getElementById('btnSpinner').classList.remove('hidden');
@@ -233,32 +277,11 @@
         .then(data => {
             const isValid = (typeof data === 'object' && data.valid) || data === true;
             if (isValid) {
-                loggedInEmpCode = code;
-
-                // --- ตรวจสอบการแสดงผลปุ่ม Export Excel เฉพาะ HRJMT123 ---
-                const exportBtn = document.getElementById('exportExcelBtn');
-                if (loggedInEmpCode === 'HRJMT123') {
-                    exportBtn.classList.remove('hidden');
-                    exportBtn.classList.add('flex');
-                } else {
-                    exportBtn.classList.add('hidden');
-                    exportBtn.classList.remove('flex');
-                }
-
-                Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true })
-                    .fire({ icon: 'success', title: 'เข้าสู่ระบบสำเร็จ' });
-
-                document.getElementById('loginSection').classList.add('hidden');
-                document.getElementById('appSection').classList.remove('hidden');
-                updateUIBasedOnTime();
-
-                const today = new Date();
-                const yyyy = today.getFullYear();
-                const mm = String(today.getMonth() + 1).padStart(2, '0');
-                const dd = String(today.getDate()).padStart(2, '0');
-                document.getElementById('datePicker').value = `${yyyy}-${mm}-${dd}`;
-                
-                loadReport();
+                // Save Session
+                sessionStorage.setItem('hr_session_user', code);
+                sessionStorage.setItem('hr_session_valid', 'true');
+                proceedLogin(code);
+                if(!isAuto) Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true }).fire({ icon: 'success', title: 'เข้าสู่ระบบสำเร็จ' });
             } else {
                 Swal.fire({ icon: 'error', title: 'เข้าสู่ระบบไม่สำเร็จ', text: 'รหัสพนักงานไม่ถูกต้อง', confirmButtonColor: '#d33' });
             }
@@ -269,6 +292,37 @@
             document.getElementById('btnSpinner').classList.add('hidden');
         });
     }
+
+    function proceedLogin(code) {
+        loggedInEmpCode = code;
+        const exportBtn = document.getElementById('exportExcelBtn');
+        if (loggedInEmpCode === 'HRJMT123') {
+            exportBtn.classList.remove('hidden');
+            exportBtn.classList.add('flex');
+        } else {
+            exportBtn.classList.add('hidden');
+            exportBtn.classList.remove('flex');
+        }
+        document.getElementById('loginSection').classList.add('hidden');
+        document.getElementById('appSection').classList.remove('hidden');
+        updateUIBasedOnTime();
+        
+        // Auto set Date to Today and Load
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        document.getElementById('datePicker').value = `${yyyy}-${mm}-${dd}`;
+        
+        loadReport();
+    }
+    
+    function handleLogout() {
+        sessionStorage.clear();
+        localStorage.clear(); // Clear data cache too
+        location.reload();
+    }
+
     document.getElementById('empCode').addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
 
     function switchTab(tabName) {
@@ -288,18 +342,49 @@
       }
     }
 
-    function loadReport() {
-      const dateVal = document.getElementById('datePicker').value;
-      const empCodeVal = document.getElementById('empCode').value; 
+    function forceRefresh() {
+        localStorage.removeItem(CACHE_KEY_PREFIX + document.getElementById('datePicker').value);
+        loadReport(true);
+    }
 
-      if (!dateVal) { Swal.fire({ icon: 'warning', title: 'กรุณาเลือกวันที่', confirmButtonColor: '#2563eb' }); return; }
+    function loadReport(isForce = false) {
+      const dateVal = document.getElementById('datePicker').value; // Always Today
+      const empCodeVal = loggedInEmpCode; 
+
+      if (!dateVal) return;
       
       document.getElementById('loading').classList.remove('hidden');
       document.getElementById('tableBody').innerHTML = ''; 
+      document.getElementById('detailTableBody').innerHTML = '';
+
+      // --- Optimization: Local Caching ---
+      const cacheKey = CACHE_KEY_PREFIX + dateVal;
+      const cached = localStorage.getItem(cacheKey);
+      
+      if (!isForce && cached) {
+          const cacheData = JSON.parse(cached);
+          const now = new Date().getTime();
+          if (now - cacheData.timestamp < CACHE_DURATION) {
+              // Use Cache
+              console.log("Using Cached Data");
+              renderReport(cacheData.data);
+              document.getElementById('loading').classList.add('hidden');
+              document.getElementById('lastUpdateSpan').innerText = "ข้อมูลล่าสุด (Cache): " + new Date(cacheData.timestamp).toLocaleTimeString();
+              return;
+          }
+      }
       
       callApi('getSummaryByDate', { dateStr: dateVal, empId: empCodeVal })
-        .then(data => renderReport(data))
-        .catch(err => Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: err.message, confirmButtonColor: '#d33' }))
+        .then(data => {
+            // Save Cache
+            localStorage.setItem(cacheKey, JSON.stringify({
+                timestamp: new Date().getTime(),
+                data: data
+            }));
+            document.getElementById('lastUpdateSpan').innerText = "ข้อมูลล่าสุด: " + new Date().toLocaleTimeString();
+            renderReport(data);
+        })
+        .catch(err => Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาดในการโหลด', text: err.message + ' (กรุณากด Refresh)', confirmButtonColor: '#d33' }))
         .finally(() => document.getElementById('loading').classList.add('hidden'));
     }
 
@@ -550,12 +635,15 @@
        document.getElementById('customConfirmModal').classList.add('hidden');
        document.getElementById('savingOverlay').classList.remove('hidden');
 
+       // Clear Cache when updating
+       localStorage.removeItem(CACHE_KEY_PREFIX + document.getElementById('datePicker').value);
+
        callApi('updateStatus', { rowIndex: pendingRowIndex, newStatus: pendingStatusValue, remark: remark })
          .then(() => {
             Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, timerProgressBar: true })
                 .fire({ icon: 'success', title: 'บันทึกข้อมูลเรียบร้อย' });
             remarkInput.value = ''; remarkInput.classList.remove('input-error'); document.getElementById('remarkError').classList.add('hidden');
-            loadReport(); 
+            loadReport(true); // Force reload
             pendingRowIndex = null; pendingStatusValue = null; pendingSelectElement = null;
          })
          .catch(err => Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ', text: err.message, confirmButtonColor: '#d33' }))
@@ -568,7 +656,7 @@
             return;
         }
 
-        const dateVal = document.getElementById('datePicker').value || 'Report';
+        const dateVal = document.getElementById('datePicker').value || 'Today';
 
         const summaryRows = [];
         const tbodyRows = document.querySelectorAll('#tableBody tr');
