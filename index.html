@@ -159,7 +159,7 @@
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbynl4hDaKu1QhtnbP53-zMSZvcy010ZrkiXePB-UBTkfW0nCLCUgaoFvNza1Vuy1Qci/exec'; 
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwDsOfbGY8ku3MvTgGTR7PcuSo-kCDKq5v0CWd6sZQF3OypziElh4vpFl81lsYLxFBz/exec'; 
 
     let globalDetails = [];
     let loggedInEmpCode = ''; 
@@ -263,14 +263,12 @@
        
        details.forEach(item => {
            let dept = item.dept;
-           // Logic ย่อชื่อแผนก (ควรตรงกับ Server)
            const dUp = dept.toUpperCase();
            if (dUp.includes("HUMAN") || dUp.includes("RECRUIT") || dUp.includes("TRAINING")) dept = "HUMAN RESOURCES";
            else if (dUp.includes("FINANCE") && dUp.includes("ACCOUNT")) dept = "FINANCE & ACCOUNT";
            else if (dUp.includes("COLLECTOR") || dUp.includes("ADVISOR")) dept = "ภาคสนาม";
            else if (dUp.includes("MARKETING")) dept = "MARKETING";
            else if (dept.includes("สาขา")) dept = dept.split("สาขา")[0].trim();
-           // ... เพิ่มเติมตามต้องการ
 
            if(!summary[dept]) summary[dept] = { name: dept, count:0, absent:0, late:0, sick:0, personal:0, vacation:0, switchHoliday:0, noInfo:0 };
            summary[dept].count++; total.count++;
@@ -335,7 +333,7 @@
          });
     }
 
-    // ... Helper Functions (Table Rendering, Filtering, Export) ...
+    // Helper Functions
     function switchTab(tabName) {
       const pSum = document.getElementById('pageSummary');
       const pDet = document.getElementById('pageDetail');
@@ -455,7 +453,7 @@
     }
     function closeConfirmModal() {
        document.getElementById('customConfirmModal').classList.add('hidden');
-       if(pendingSelectElement) pendingSelectElement.value = "รอตรวจสอบสถานะ"; // Revert UI if cancel
+       if(pendingSelectElement) pendingSelectElement.value = "รอตรวจสอบสถานะ"; 
        pendingRowIndex = null;
     }
     
