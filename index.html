@@ -160,7 +160,7 @@
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZqrhD53hsn-xBbpqf8mNhpk3ZhZvHjMZkO1Uu_3R95xPnp-Iw59sNz2J38bIo_Slz/exec'; 
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzlyOwjUW-fopY1HvHoB1gY6hlyVHE6YSuMR2bqh_R2jpLJsZm_3ycNAJsIX23MnHmJ/exec'; 
 
     let globalDetails = [];
     let loggedInEmpCode = ''; 
@@ -168,12 +168,11 @@
     let searchTimeout = null;
     let pendingRowIndex = null, pendingStatusValue = null, pendingSelectElement = null; 
 
-    // โหลด Session อัตโนมัติเมื่อเปิดหน้าเว็บ
     window.onload = function() {
         const savedCode = localStorage.getItem('savedEmpCode');
         if (savedCode) {
             document.getElementById('empCode').value = savedCode;
-            handleLogin(); // เรียกใช้งานเพื่อเข้าสู่ระบบทันที
+            handleLogin(); 
         }
     };
 
@@ -217,14 +216,23 @@
         .then(data => {
             if ((typeof data === 'object' && data.valid) || data === true) {
                 loggedInEmpCode = code;
-                localStorage.setItem('savedEmpCode', code); // บันทึก Session กันรีเฟรช
+                localStorage.setItem('savedEmpCode', code);
 
-                if (loggedInEmpCode === 'HRJMT123') document.getElementById('exportExcelBtn').classList.remove('hidden');
+                // --- ตรวจสอบสิทธิ์ สำหรับเปิด/ปิด หน้า Summary ---
+                if (loggedInEmpCode === 'HRJMT123') {
+                    document.getElementById('exportExcelBtn').classList.remove('hidden');
+                    document.getElementById('tabSummary').style.display = 'flex'; // แสดงปุ่มแท็บ
+                    switchTab('summary'); // เปิดหน้าสรุปภาพรวมเป็นค่าเริ่มต้นสำหรับแอดมิน
+                } else {
+                    document.getElementById('exportExcelBtn').classList.add('hidden');
+                    document.getElementById('tabSummary').style.display = 'none'; // ซ่อนปุ่มแท็บ
+                    switchTab('detail'); // บังคับสลับไปหน้าข้อมูลพนักงานสำหรับคนทั่วไป
+                }
+
                 document.getElementById('loginSection').classList.add('hidden');
                 document.getElementById('appSection').classList.remove('hidden');
                 updateUIBasedOnTime();
                 
-                // Set Date to Today
                 const d = new Date();
                 const yyyy = d.getFullYear();
                 const mm = String(d.getMonth() + 1).padStart(2, '0');
@@ -234,7 +242,7 @@
                 loadReport();
             } else {
                 Swal.fire('Error', 'รหัสพนักงานไม่ถูกต้อง', 'error');
-                localStorage.removeItem('savedEmpCode'); // ถ้าพาสผิดให้เคลียร์ Session
+                localStorage.removeItem('savedEmpCode'); 
             }
         })
         .catch(err => Swal.fire('Error', err.message, 'error'))
@@ -244,7 +252,6 @@
         });
     }
 
-    // ฟังก์ชันสำหรับปุ่มออกจากระบบ
     function handleLogout() {
         localStorage.removeItem('savedEmpCode');
         loggedInEmpCode = '';
@@ -484,4 +491,3 @@
   </script>
 </body>
 </html>
-
