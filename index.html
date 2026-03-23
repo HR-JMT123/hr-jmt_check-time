@@ -160,15 +160,13 @@
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby3Qs_KDd-kU9ihG2lJywRvum1wb-irUzX76MhtS-HpcgYHkFVlWSPIzjWkWKRiB_88/exec'; 
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxF-nq2QHD8fl6-Z9pbHtIXH3_t2A1nqd24KZA2iz7MiMRuCv7UUFbvaf2FOWslLiLV/exec'; 
 
     let globalDetails = [];
     let loggedInEmpCode = ''; 
     let currentActiveGroup = 'รอตรวจสอบสถานะ';
     let searchTimeout = null;
     let pendingRowIndex = null, pendingStatusValue = null, pendingSelectElement = null; 
-
-    // นำ window.onload ที่เคยจำ Session ออก เพื่อให้เวลารีเฟรชแล้วบังคับกลับหน้า Login
 
     function isEditTime() {
         if (loggedInEmpCode === 'HRJMT123') return true; 
@@ -339,7 +337,8 @@
        document.getElementById('remarkError').classList.add('hidden');
        pendingRowIndex = null; pendingStatusValue = null;
 
-       callApi('updateStatus', payload)
+       // ส่งซ้ำอัตโนมัติ 5 ครั้ง หาก Server Busy
+       callApi('updateStatus', payload, 5)
          .then(() => {
             toast.fire({ icon: 'success', title: 'บันทึกสำเร็จ' });
          })
