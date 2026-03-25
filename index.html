@@ -59,16 +59,10 @@
       </div>
       <div class="flex items-center gap-2 bg-gray-50 p-2 rounded-lg border border-gray-200 shadow-sm flex-wrap justify-center">
         <label for="datePicker" class="text-sm font-semibold text-gray-700 pl-2">เลือกวันที่:</label>
-        
         <input type="date" id="datePicker" class="border border-gray-300 rounded px-3 py-1.5 text-sm outline-none bg-gray-100 text-gray-500 cursor-not-allowed" disabled>
-        
         <button onclick="loadReport()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-1.5 rounded text-sm transition-colors shadow-sm">อัปเดตข้อมูล</button>
-        <button id="exportExcelBtn" onclick="exportExcel()" class="hidden bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-1.5 rounded text-sm transition-colors shadow-sm items-center gap-1 ml-2">
-            Export Excel
-        </button>
-        <button onclick="handleLogout()" class="bg-red-500 hover:bg-red-600 text-white font-medium px-4 py-1.5 rounded text-sm transition-colors shadow-sm items-center gap-1 ml-2">
-            ออกจากระบบ
-        </button>
+        <button id="exportExcelBtn" onclick="exportExcel()" class="hidden bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-1.5 rounded text-sm transition-colors shadow-sm items-center gap-1 ml-2">Export Excel</button>
+        <button onclick="handleLogout()" class="bg-red-500 hover:bg-red-600 text-white font-medium px-4 py-1.5 rounded text-sm transition-colors shadow-sm items-center gap-1 ml-2">ออกจากระบบ</button>
       </div>
     </div>
     
@@ -160,7 +154,8 @@
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyF7mp5zdsqp8isN2sLMMOMcQfrC318sVak_j6_5sRCm3K_AGoIZE3GUGirP9NrU_ic/exec'; 
+    // URL ของ Web App จาก Google Apps Script
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwCvDu7TjUNfRAnKqS9QqSKtHQjvmeQiIwVRB9uoT_IpnavUsqZ-9RJoCwy4btD3d-9/exec'; 
 
     let globalDetails = [];
     let loggedInEmpCode = ''; 
@@ -174,6 +169,7 @@
         const m = (now.getHours() * 60) + now.getMinutes();
         return m >= (4 * 60) && m < ((8 * 60) + 50);
     }
+    
     function updateUIBasedOnTime() {
         const alertBox = document.getElementById('editTimeAlert');
         isEditTime() ? alertBox.classList.add('hidden') : alertBox.classList.remove('hidden');
@@ -209,15 +205,14 @@
             if ((typeof data === 'object' && data.valid) || data === true) {
                 loggedInEmpCode = code;
 
-                // --- ตรวจสอบสิทธิ์ สำหรับเปิด/ปิด หน้า Summary ---
                 if (loggedInEmpCode === 'HRJMT123') {
                     document.getElementById('exportExcelBtn').classList.remove('hidden');
-                    document.getElementById('tabSummary').style.display = 'flex'; // แสดงปุ่มแท็บ
-                    switchTab('summary'); // เปิดหน้าสรุปภาพรวมเป็นค่าเริ่มต้นสำหรับแอดมิน
+                    document.getElementById('tabSummary').style.display = 'flex'; 
+                    switchTab('summary'); 
                 } else {
                     document.getElementById('exportExcelBtn').classList.add('hidden');
-                    document.getElementById('tabSummary').style.display = 'none'; // ซ่อนปุ่มแท็บ
-                    switchTab('detail'); // บังคับสลับไปหน้าข้อมูลพนักงานสำหรับคนทั่วไป
+                    document.getElementById('tabSummary').style.display = 'none'; 
+                    switchTab('detail'); 
                 }
 
                 document.getElementById('loginSection').classList.add('hidden');
@@ -331,13 +326,13 @@
        const toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
        toast.fire({ icon: 'info', title: 'กำลังบันทึก...' });
 
-       const payload = { rowIndex: pendingRowIndex, newStatus: pendingStatusValue, remark: remark };
+       // Payload ส่งค่า empId กลับไปให้ Apps Script รับทราบ
+       const payload = { rowIndex: pendingRowIndex, newStatus: pendingStatusValue, remark: remark, empId: loggedInEmpCode };
        
        remarkInput.value = ''; 
        document.getElementById('remarkError').classList.add('hidden');
        pendingRowIndex = null; pendingStatusValue = null;
 
-       // ส่งซ้ำอัตโนมัติ 5 ครั้ง หาก Server Busy
        callApi('updateStatus', payload, 5)
          .then(() => {
             toast.fire({ icon: 'success', title: 'บันทึกสำเร็จ' });
