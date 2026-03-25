@@ -154,8 +154,7 @@
   </div>
 
   <script>
-    // URL ของ Web App จาก Google Apps Script
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzCKv0apDXF_jB4pQKmvFgGez2CViBUJj-njfosroQMTAULna9_2LLnVa7LzuR7BtzD/exec'; 
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzCWHIYFJC3wFkSU5kLmGWPqjJgyolxwD3KpEAzAc5tO9nTToRxh28SG-jkNWJqVOgN/exec'; 
 
     let globalDetails = [];
     let loggedInEmpCode = ''; 
@@ -280,19 +279,34 @@
            const deptUpper = dept.toUpperCase();
            let displayDept = dept;
 
-           // เพิ่มเงื่อนไขการ Grouping 
-           if (deptUpper.includes("HUMAN RESOURCES") || deptUpper.includes("RECRUITMENT") || deptUpper.includes("TRAINING") || deptUpper.includes("EMPLOYEE RELATIONS")) displayDept = "HUMAN RESOURCES";
-           else if (deptUpper.includes("FINANCE") && deptUpper.includes("ACCOUNT")) displayDept = "FINANCE & ACCOUNT";
-           else if (deptUpper.includes("EXECUTIVE OFFICE")) displayDept = "EXECUTIVE OFFICE";
-           else if (deptUpper.includes("FCR") || deptUpper.includes("COLLECTOR") || deptUpper.includes("ADVISOR")) displayDept = "ภาคสนาม";
-           else if (deptUpper.includes("MARKETING")) displayDept = "MARKETING";
-           else if (deptUpper.includes("SERVICE") && deptUpper.includes("MAINTENANCE")) displayDept = "SERVICE & MAINTENANCE";
-           else if (deptUpper.includes("SCB ASSET") || deptUpper.includes("JK ASSET") || deptUpper.includes("NPA") || deptUpper.includes("NPL")) displayDept = "NPA/NPL";
-           else if (dept.includes("ซื้อหนี้") || dept.includes("รับราง") || dept.includes("รับจ้าง")) displayDept = "Collection";
-           else if (deptUpper.includes("บังคับคดี")) displayDept = "บังคับคดี";
-           else if (deptUpper.includes("คอมพิวเตอร์")) displayDept = "คอมพิวเตอร์";
-           else if (deptUpper.includes("ADMIN")) displayDept = "ADMIN";
-           else if (dept.includes("สาขา")) displayDept = dept.split("สาขา")[0].trim();
+           // ตัดช่องว่างออกให้หมดเพื่อกันการจับคู่พลาด (Exact Match)
+           const deptNoSpace = deptUpper.replace(/\s+/g, '');
+
+           if (deptUpper.includes("HUMAN RESOURCES") || deptUpper.includes("RECRUITMENT") || deptUpper.includes("TRAINING") || deptUpper.includes("EMPLOYEE RELATIONS")) {
+               displayDept = "HUMAN RESOURCES";
+           } else if (deptUpper.includes("FINANCE") && deptUpper.includes("ACCOUNT")) {
+               displayDept = "FINANCE & ACCOUNT";
+           } else if (deptUpper.includes("EXECUTIVE OFFICE")) {
+               displayDept = "EXECUTIVE OFFICE";
+           } else if (deptUpper.includes("FCR") || deptUpper.includes("COLLECTOR") || deptUpper.includes("ADVISOR")) {
+               displayDept = "ภาคสนาม";
+           } else if (deptUpper.includes("MARKETING")) {
+               displayDept = "MARKETING";
+           } else if (deptUpper.includes("SERVICE") && deptUpper.includes("MAINTENANCE")) {
+               displayDept = "SERVICE & MAINTENANCE";
+           } else if (deptUpper.includes("SCB ASSET") || deptUpper.includes("JK ASSET") || deptUpper.includes("NPA") || deptUpper.includes("NPL")) {
+               displayDept = "NPA/NPL";
+           } else if (deptUpper.includes("ซื้อหนี้") || deptUpper.includes("รับราง") || deptUpper.includes("รับจ้าง")) {
+               displayDept = "Collection";
+           } else if (deptNoSpace === "บังคับคดี(JAM)" || deptNoSpace === "บังคับคดี") {
+               displayDept = "บังคับคดี";
+           } else if (deptNoSpace === "คอมพิวเตอร์(JAM)" || deptNoSpace === "คอมพิวเตอร์") {
+               displayDept = "คอมพิวเตอร์";
+           } else if (deptNoSpace === "ADMIN(JAM)" || deptNoSpace === "ADMIN") {
+               displayDept = "ADMIN";
+           } else if (dept.includes("สาขา")) {
+               displayDept = dept.split("สาขา")[0].trim();
+           }
 
            if(!summary[displayDept]) summary[displayDept] = { name: displayDept, count:0, absent:0, late:0, sick:0, personal:0, vacation:0, switchHoliday:0, noInfo:0 };
            summary[displayDept].count++; total.count++;
