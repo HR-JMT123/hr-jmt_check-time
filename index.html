@@ -59,16 +59,10 @@
       </div>
       <div class="flex items-center gap-2 bg-gray-50 p-2 rounded-lg border border-gray-200 shadow-sm flex-wrap justify-center">
         <label for="datePicker" class="text-sm font-semibold text-gray-700 pl-2">เลือกวันที่:</label>
-        
         <input type="date" id="datePicker" class="border border-gray-300 rounded px-3 py-1.5 text-sm outline-none bg-gray-100 text-gray-500 cursor-not-allowed" disabled>
-        
         <button onclick="loadReport()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-1.5 rounded text-sm transition-colors shadow-sm">อัปเดตข้อมูล</button>
-        <button id="exportExcelBtn" onclick="exportExcel()" class="hidden bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-1.5 rounded text-sm transition-colors shadow-sm items-center gap-1 ml-2">
-            Export Excel
-        </button>
-        <button onclick="handleLogout()" class="bg-red-500 hover:bg-red-600 text-white font-medium px-4 py-1.5 rounded text-sm transition-colors shadow-sm items-center gap-1 ml-2">
-            ออกจากระบบ
-        </button>
+        <button id="exportExcelBtn" onclick="exportExcel()" class="hidden bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-1.5 rounded text-sm transition-colors shadow-sm items-center gap-1 ml-2">Export Excel</button>
+        <button onclick="handleLogout()" class="bg-red-500 hover:bg-red-600 text-white font-medium px-4 py-1.5 rounded text-sm transition-colors shadow-sm items-center gap-1 ml-2">ออกจากระบบ</button>
       </div>
     </div>
     
@@ -160,7 +154,8 @@
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwmj2EKALL-3TNmSogt6NQr_bAweWwwt08qnqHrQKxk6ln91m15GL0eQ-sri9S3DByp/exec'; 
+    // URL ของ Web App จาก Google Apps Script
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzCKv0apDXF_jB4pQKmvFgGez2CViBUJj-njfosroQMTAULna9_2LLnVa7LzuR7BtzD/exec'; 
 
     let globalDetails = [];
     let loggedInEmpCode = ''; 
@@ -174,6 +169,7 @@
         const m = (now.getHours() * 60) + now.getMinutes();
         return m >= (4 * 60) && m < ((8 * 60) + 50);
     }
+    
     function updateUIBasedOnTime() {
         const alertBox = document.getElementById('editTimeAlert');
         isEditTime() ? alertBox.classList.add('hidden') : alertBox.classList.remove('hidden');
@@ -209,15 +205,14 @@
             if ((typeof data === 'object' && data.valid) || data === true) {
                 loggedInEmpCode = code;
 
-                // --- ตรวจสอบสิทธิ์ สำหรับเปิด/ปิด หน้า Summary ---
                 if (loggedInEmpCode === 'HRJMT123') {
                     document.getElementById('exportExcelBtn').classList.remove('hidden');
-                    document.getElementById('tabSummary').style.display = 'flex'; // แสดงปุ่มแท็บ
-                    switchTab('summary'); // เปิดหน้าสรุปภาพรวมเป็นค่าเริ่มต้นสำหรับแอดมิน
+                    document.getElementById('tabSummary').style.display = 'flex'; 
+                    switchTab('summary'); 
                 } else {
                     document.getElementById('exportExcelBtn').classList.add('hidden');
-                    document.getElementById('tabSummary').style.display = 'none'; // ซ่อนปุ่มแท็บ
-                    switchTab('detail'); // บังคับสลับไปหน้าข้อมูลพนักงานสำหรับคนทั่วไป
+                    document.getElementById('tabSummary').style.display = 'none'; 
+                    switchTab('detail'); 
                 }
 
                 document.getElementById('loginSection').classList.add('hidden');
@@ -281,25 +276,41 @@
        let total = { count: 0, absent: 0, late: 0, sick: 0, personal: 0, vacation: 0, switchHoliday: 0, noInfo: 0 };
        
        details.forEach(item => {
-           let dept = item.dept;
-           const dUp = dept.toUpperCase();
-           if (dUp.includes("HUMAN") || dUp.includes("RECRUIT") || dUp.includes("TRAINING")) dept = "HUMAN RESOURCES";
-           else if (dUp.includes("FINANCE") && dUp.includes("ACCOUNT")) dept = "FINANCE & ACCOUNT";
-           else if (dUp.includes("COLLECTOR") || dUp.includes("ADVISOR")) dept = "ภาคสนาม";
-           else if (dUp.includes("MARKETING")) dept = "MARKETING";
-           else if (dept.includes("สาขา")) dept = dept.split("สาขา")[0].trim();
+           let dept = item.dept || 'ไม่ระบุแผนก';
+           const deptUpper = dept.toUpperCase();
+           let displayDept = dept;
 
-           if(!summary[dept]) summary[dept] = { name: dept, count:0, absent:0, late:0, sick:0, personal:0, vacation:0, switchHoliday:0, noInfo:0 };
-           summary[dept].count++; total.count++;
+           // เพิ่มเงื่อนไขการ Grouping 
+           if (deptUpper.includes("HUMAN RESOURCES") || deptUpper.includes("RECRUITMENT") || deptUpper.includes("TRAINING") || deptUpper.includes("EMPLOYEE RELATIONS")) displayDept = "HUMAN RESOURCES";
+           else if (deptUpper.includes("FINANCE") && deptUpper.includes("ACCOUNT")) displayDept = "FINANCE & ACCOUNT";
+           else if (deptUpper.includes("EXECUTIVE OFFICE")) displayDept = "EXECUTIVE OFFICE";
+           else if (deptUpper.includes("FCR") || deptUpper.includes("COLLECTOR") || deptUpper.includes("ADVISOR")) displayDept = "ภาคสนาม";
+           else if (deptUpper.includes("MARKETING")) displayDept = "MARKETING";
+           else if (deptUpper.includes("SERVICE") && deptUpper.includes("MAINTENANCE")) displayDept = "SERVICE & MAINTENANCE";
+           else if (deptUpper.includes("SCB ASSET") || deptUpper.includes("JK ASSET") || deptUpper.includes("NPA") || deptUpper.includes("NPL")) displayDept = "NPA/NPL";
+           else if (dept.includes("ซื้อหนี้") || dept.includes("รับราง") || dept.includes("รับจ้าง")) displayDept = "Collection";
+           else if (deptUpper.includes("บังคับคดี")) displayDept = "บังคับคดี";
+           else if (deptUpper.includes("คอมพิวเตอร์")) displayDept = "คอมพิวเตอร์";
+           else if (deptUpper.includes("ADMIN")) displayDept = "ADMIN";
+           else if (dept.includes("สาขา")) displayDept = dept.split("สาขา")[0].trim();
+
+           if(!summary[displayDept]) summary[displayDept] = { name: displayDept, count:0, absent:0, late:0, sick:0, personal:0, vacation:0, switchHoliday:0, noInfo:0 };
+           summary[displayDept].count++; total.count++;
            
-           const s = (item.reportIn || "").toLowerCase();
-           if(s.includes("สาย")) { summary[dept].late++; total.late++; }
-           else if(s.includes("ขาด")) { summary[dept].absent++; total.absent++; }
-           else if(s.includes("ป่วย")) { summary[dept].sick++; total.sick++; }
-           else if(s.includes("กิจ")) { summary[dept].personal++; total.personal++; }
-           else if(s.includes("พักร้อน")) { summary[dept].vacation++; total.vacation++; }
-           else if(s.includes("ทำงาน")) { /* ok */ }
-           else { summary[dept].noInfo++; total.noInfo++; }
+           const currentStatus = (item.reportIn || item.remark || "").toLowerCase();
+           const leaveText = (item.leaveStatus || "").toLowerCase();
+
+           if (currentStatus.includes("ทำงาน") || currentStatus.includes("working")) { /* working */ }
+           else if (currentStatus.includes("สาย") || currentStatus.includes("late")) { summary[displayDept].late++; total.late++; }
+           else if (currentStatus.includes("ขาด") || currentStatus.includes("absent")) { summary[displayDept].absent++; total.absent++; }
+           else if (currentStatus.includes("สลับวันหยุด")) { summary[displayDept].switchHoliday++; total.switchHoliday++; }
+           else if (currentStatus.includes("ลา") || (leaveText !== '-' && leaveText !== '')) {
+               if (currentStatus.includes("ป่วย") || leaveText.includes("ป่วย")) { summary[displayDept].sick++; total.sick++; }
+               else if (currentStatus.includes("กิจ") || leaveText.includes("กิจ")) { summary[displayDept].personal++; total.personal++; }
+               else if (currentStatus.includes("พักร้อน") || leaveText.includes("พักร้อน")) { summary[displayDept].vacation++; total.vacation++; }
+               else { summary[displayDept].noInfo++; total.noInfo++; }
+           } 
+           else { summary[displayDept].noInfo++; total.noInfo++; }
        });
        return { report: Object.values(summary).sort((a,b)=>b.count-a.count), total: total };
     }
@@ -331,14 +342,12 @@
        const toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
        toast.fire({ icon: 'info', title: 'กำลังบันทึก...' });
 
-       // --- ส่วนที่แก้ไข: เพิ่ม empId เข้ารหัสไปด้านหลังบ้าน ---
        const payload = { rowIndex: pendingRowIndex, newStatus: pendingStatusValue, remark: remark, empId: loggedInEmpCode };
        
        remarkInput.value = ''; 
        document.getElementById('remarkError').classList.add('hidden');
        pendingRowIndex = null; pendingStatusValue = null;
 
-       // ส่งซ้ำอัตโนมัติ 5 ครั้ง หาก Server Busy
        callApi('updateStatus', payload, 5)
          .then(() => {
             toast.fire({ icon: 'success', title: 'บันทึกสำเร็จ' });
