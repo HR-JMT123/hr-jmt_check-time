@@ -19,8 +19,13 @@
     .text-dept { text-align: left !important; padding-left: 10px !important; font-weight: 500; white-space: nowrap; }
     .num-cell { font-variant-numeric: tabular-nums; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes popIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
     .login-box { animation: fadeIn 0.4s ease-out; }
-    .modal-content { animation: fadeIn 0.2s ease-out; }
+    .modal-content { animation: popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    .input-error { border-color: #ef4444 !important; --tw-ring-color: #fecaca !important; }
+    div:where(.swal2-container) { font-family: 'Sarabun', sans-serif !important; }
   </style>
 </head>
 <body class="min-h-screen">
@@ -39,9 +44,10 @@
         </div>
         <button onclick="handleLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg shadow-md transition-colors flex justify-center items-center">
           <span id="btnText">เข้าสู่ระบบ</span>
-          <svg id="btnSpinner" class="animate-spin ml-2 h-4 w-4 text-white hidden" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+          <svg id="btnSpinner" class="animate-spin ml-2 h-4 w-4 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
         </button>
       </div>
+      <div class="mt-6 text-center text-xs text-gray-400">Internal Use Only</div>
     </div>
   </div>
 
@@ -51,23 +57,26 @@
         <h1 class="text-2xl font-bold text-gray-800">รายงาน % สูญเสียเวลาการทำงาน</h1>
         <p class="text-sm text-gray-500 mt-1">ข้อมูล Time Attendance แยกตามส่วนงาน</p>
       </div>
-      <div class="flex items-center gap-2 bg-gray-50 p-2 rounded-lg border border-gray-200 flex-wrap justify-center">
+      <div class="flex items-center gap-2 bg-gray-50 p-2 rounded-lg border border-gray-200 shadow-sm flex-wrap justify-center">
         <label for="datePicker" class="text-sm font-semibold text-gray-700 pl-2">เลือกวันที่:</label>
-        <input type="date" id="datePicker" class="border border-gray-300 rounded px-3 py-1.5 text-sm outline-none">
-        <button onclick="loadReport()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-1.5 rounded text-sm transition-colors">อัปเดตข้อมูล</button>
-        <button id="exportExcelBtn" onclick="exportExcel()" class="hidden bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-1.5 rounded text-sm ml-2">Export Excel</button>
-        <button onclick="handleLogout()" class="bg-red-500 hover:bg-red-600 text-white font-medium px-4 py-1.5 rounded text-sm ml-2">ออกจากระบบ</button>
+        <input type="date" id="datePicker" class="border border-gray-300 rounded px-3 py-1.5 text-sm outline-none bg-gray-100 text-gray-500 cursor-not-allowed" disabled>
+        <button onclick="loadReport()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-1.5 rounded text-sm transition-colors shadow-sm">อัปเดตข้อมูล</button>
+        <button id="exportExcelBtn" onclick="exportExcel()" class="hidden bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-1.5 rounded text-sm transition-colors shadow-sm items-center gap-1 ml-2">Export Excel</button>
+        <button onclick="handleLogout()" class="bg-red-500 hover:bg-red-600 text-white font-medium px-4 py-1.5 rounded text-sm transition-colors shadow-sm items-center gap-1 ml-2">ออกจากระบบ</button>
+      </div>
+    </div>
+    
+    <div id="editTimeAlert" class="hidden bg-orange-50 border-l-4 border-orange-500 text-orange-700 p-4 rounded shadow-sm flex items-center" role="alert">
+      <svg class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+      <div>
+        <p class="font-bold">ระบบอยู่ในโหมด "ดูข้อมูลเท่านั้น"</p>
+        <p class="text-sm">การแก้ไขสถานะอนุญาตเฉพาะช่วงเวลา 04:00 - 08:50 น. เท่านั้น</p>
       </div>
     </div>
 
-    <div id="editTimeAlert" class="hidden bg-orange-50 border-l-4 border-orange-500 text-orange-700 p-4 rounded shadow-sm flex items-center">
-      <svg class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-      <div><p class="font-bold">ระบบอยู่ในโหมด "ดูข้อมูลเท่านั้น"</p><p class="text-sm">การแก้ไขสถานะอนุญาตเฉพาะช่วงเวลา 04:00 - 08:50 น. เท่านั้น</p></div>
-    </div>
-
-    <div class="flex space-x-2 bg-gray-100 p-1.5 rounded-lg w-fit">
-      <button onclick="switchTab('summary')" id="tabSummary" class="px-6 py-2 rounded-md text-sm font-bold shadow-sm bg-white text-blue-700 border border-gray-200 transition-all">สรุปภาพรวม (Summary)</button>
-      <button onclick="switchTab('detail')" id="tabDetail" class="px-6 py-2 rounded-md text-sm font-bold text-gray-500 hover:bg-gray-200 transition-all">ข้อมูลพนักงาน (Detail)</button>
+    <div class="flex space-x-2 bg-gray-100 p-1.5 rounded-lg w-fit border border-gray-200">
+      <button onclick="switchTab('summary')" id="tabSummary" class="px-6 py-2 rounded-md text-sm font-bold shadow-sm bg-white text-blue-700 border border-gray-200 transition-all flex items-center">สรุปภาพรวม (Summary)</button>
+      <button onclick="switchTab('detail')" id="tabDetail" class="px-6 py-2 rounded-md text-sm font-bold text-gray-500 hover:bg-gray-200 hover:text-gray-700 transition-all flex items-center">ข้อมูลพนักงาน (Detail)</button>
     </div>
 
     <div id="loading" class="hidden py-12 text-center">
@@ -75,10 +84,10 @@
       <p class="mt-3 text-gray-500 font-medium">กำลังประมวลผลข้อมูล...</p>
     </div>
 
-    <div id="customConfirmModal" class="fixed inset-0 bg-slate-900 bg-opacity-40 z-[60] hidden flex items-center justify-center backdrop-blur-sm">
-        <div class="modal-content bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
+    <div id="customConfirmModal" class="fixed inset-0 bg-slate-900 bg-opacity-40 z-[60] hidden flex items-center justify-center backdrop-blur-sm transition-opacity">
+        <div class="modal-content bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm border border-gray-100">
             <div class="text-center">
-                <h3 class="text-xl font-bold text-gray-800">ยืนยันการบันทึก</h3>
+                <h3 class="text-xl font-bold text-gray-800" id="confirmTitle">ยืนยันการบันทึก</h3>
                 <div class="mt-2"><p class="text-sm text-gray-500">คุณต้องการเปลี่ยนสถานะเป็น <br> <span class="font-bold text-blue-600 text-lg" id="confirmStatusText"></span> <br> ใช่หรือไม่?</p></div>
                 <div class="mt-4 text-left">
                     <label class="text-xs font-semibold text-gray-600 ml-1">หมายเหตุ (Remark): <span class="text-red-500">*จำเป็น</span></label>
@@ -87,22 +96,22 @@
                 </div>
             </div>
             <div class="mt-6 flex gap-3">
-                <button onclick="closeConfirmModal()" class="flex-1 px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-xl font-semibold text-sm">ยกเลิก</button>
-                <button onclick="executeStatusUpdate()" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-xl font-semibold text-sm">ยืนยัน</button>
+                <button onclick="closeConfirmModal()" class="flex-1 px-4 py-2.5 bg-white text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 font-semibold text-sm transition-colors">ยกเลิก</button>
+                <button onclick="executeStatusUpdate()" class="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-semibold text-sm shadow-md transition-all">ยืนยัน</button>
             </div>
         </div>
     </div>
 
-    <div id="pageSummary" class="block space-y-4">
+    <div id="pageSummary" class="block space-y-4 animate-[fadeIn_0.3s_ease-out]">
       <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
-        <div class="p-4 border-b border-gray-200 bg-blue-50"><h2 class="font-bold text-lg text-blue-900">ตารางแสดงสถิติพนักงานประจำวัน (แยกตามกลุ่มรายงาน)</h2></div>
+        <div class="p-4 border-b border-gray-200 bg-blue-50"><h2 class="font-bold text-lg text-blue-900">ตารางแสดงสถิติพนักงานประจำวัน</h2></div>
         <div class="overflow-x-auto">
           <table class="report-table">
             <thead>
               <tr>
-                <th rowspan="2" class="w-10 th-main">ลำดับ</th><th rowspan="2" class="w-56 th-main">กลุ่มแผนก</th><th rowspan="2" class="w-16 th-main font-bold">จำนวน<br>(คน)</th>
-                <th colspan="8" class="th-blue font-bold">ข้อมูลสถิติ (คน)</th>
-                <th colspan="8" class="th-red font-bold">% สูญเสียเทียบกับจำนวนพนักงาน</th>
+                <th rowspan="2" class="w-10 th-main">ลำดับ</th><th rowspan="2" class="w-56 th-main">ส่วนงาน</th><th rowspan="2" class="w-16 th-main font-bold">จำนวน<br>(คน)</th>
+                <th colspan="8" class="th-blue font-bold border-b-2 border-blue-300">ข้อมูลสถิติ (คน)</th>
+                <th colspan="8" class="th-red font-bold border-b-2 border-red-300">% สูญเสียเทียบกับจำนวนพนักงาน</th>
               </tr>
               <tr>
                 <th class="bg-blue-50 text-xs">ขาดงาน</th><th class="bg-blue-50 text-xs">มาสาย</th><th class="bg-blue-50 text-xs">ลาป่วย</th><th class="bg-blue-50 text-xs">ลากิจ</th><th class="bg-blue-50 text-xs">พักร้อน</th><th class="bg-blue-50 text-xs">สลับวันหยุด</th><th class="bg-blue-50 text-xs">ไม่แจ้งข้อมูล</th><th class="bg-blue-100 text-sm font-bold text-blue-900">Total</th>
@@ -110,46 +119,48 @@
               </tr>
             </thead>
             <tbody id="tableBody"></tbody>
-            <tfoot id="tableFooter" class="bg-gray-100 font-bold"></tfoot>
+            <tfoot id="tableFooter" class="bg-gray-100 font-bold border-t-2 border-gray-300"></tfoot>
           </table>
         </div>
       </div>
     </div>
 
-    <div id="pageDetail" class="hidden space-y-4">
+    <div id="pageDetail" class="hidden space-y-4 animate-[fadeIn_0.3s_ease-out]">
       <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
-        <div id="filterBar" class="flex gap-3 overflow-x-auto pb-2 mb-2"></div>
-        <div class="flex flex-col xl:flex-row justify-between items-center gap-3 mb-4 bg-gray-50 p-3 rounded-lg">
-            <h2 id="currentGroupTitle" class="font-bold text-lg text-gray-700 whitespace-nowrap">รายการข้อมูล</h2>
-            <div class="flex flex-col sm:flex-row gap-2 w-full xl:w-auto">
-                <input type="text" id="searchDept" oninput="handleSearch()" placeholder="ค้นหาสาขา/แผนก..." class="pl-3 pr-4 py-2 border border-gray-300 rounded-lg text-sm">
-                <input type="text" id="searchName" oninput="handleSearch()" placeholder="ค้นหาชื่อ..." class="pl-3 pr-4 py-2 border border-gray-300 rounded-lg text-sm">
-            </div>
+        <div id="filterBar" class="flex gap-3 overflow-x-auto pb-2 scrollbar-hide mb-2"></div>
+        
+        <div class="flex flex-col xl:flex-row justify-between items-center gap-3 mb-4 bg-gray-50 p-3 rounded-lg border border-gray-200">
+           <h2 id="currentGroupTitle" class="font-bold text-lg text-gray-700 whitespace-nowrap">รายการข้อมูล</h2>
+           <div class="flex flex-col sm:flex-row gap-2 w-full xl:w-auto">
+               <input type="text" id="searchBranch" oninput="handleSearch()" placeholder="ค้นหาสาขา..." class="pl-3 pr-4 py-2 border border-gray-300 rounded-lg w-full text-sm">
+               <input type="text" id="searchDept" oninput="handleSearch()" placeholder="ค้นหาแผนก..." class="pl-3 pr-4 py-2 border border-gray-300 rounded-lg w-full text-sm">
+               <input type="text" id="searchName" oninput="handleSearch()" placeholder="ค้นหาชื่อ..." class="pl-3 pr-4 py-2 border border-gray-300 rounded-lg w-full text-sm">
+           </div>
         </div>
+
         <div class="overflow-x-auto min-h-[300px]">
            <table class="w-full text-sm text-left border-collapse">
-             <thead class="bg-gray-800 text-white uppercase text-xs sticky top-0">
+             <thead class="bg-gray-800 text-white uppercase text-xs sticky top-0 z-10">
                <tr>
-                 <th class="px-4 py-3 text-center w-16">#</th><th class="px-4 py-3">ชื่อ-นามสกุล</th><th class="px-4 py-3">แผนก</th><th class="px-4 py-3 text-center">In</th><th class="px-4 py-3 text-center">Out</th><th class="px-4 py-3 w-48">สถานะ</th>
+                 <th class="px-4 py-3 text-center w-16">#</th><th class="px-4 py-3">ชื่อ-นามสกุล</th><th class="px-4 py-3">แผนก</th><th class="px-4 py-3 text-center">Time In</th><th class="px-4 py-3 text-center">Time Out</th><th class="px-4 py-3 w-48">สถานะ (Report In)</th>
                </tr>
              </thead>
              <tbody id="detailTableBody" class="divide-y divide-gray-200 bg-white"></tbody>
            </table>
         </div>
-        <div id="detailCount" class="p-2 text-xs text-gray-500 text-center"></div>
+        <div class="p-2 bg-gray-50 text-xs text-gray-500 text-center border-t border-gray-200 mt-2" id="detailCount"></div>
       </div>
     </div>
   </div>
 
   <script>
-    // ***** แก้ไข URL นี้เป็นของคุณ *****
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbypyyHVGHoKzqorzGxPbKQXsvIdPrIGdZKGasuIlUSaq9eaOWlRr2YPx-04qO5SliR8/exec';
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzd67tycyEf4mPEJAR98exzr3bh8RuGc7s3yYCDoTbuW6Tw1-_BFQe0k0UjH58fLBbR/exec'; 
 
     let globalDetails = [];
     let loggedInEmpCode = ''; 
     let currentActiveGroup = 'รอตรวจสอบสถานะ';
-    let groupedData = {};
-    let pendingRowIndex = null, pendingStatusValue = null, pendingSelectElement = null;
+    let searchTimeout = null;
+    let pendingRowIndex = null, pendingStatusValue = null, pendingSelectElement = null; 
 
     function isEditTime() {
         if (loggedInEmpCode === 'HRJMT123') return true; 
@@ -157,13 +168,14 @@
         const m = (now.getHours() * 60) + now.getMinutes();
         return m >= (4 * 60) && m < ((8 * 60) + 50);
     }
-
+    
     function updateUIBasedOnTime() {
         const alertBox = document.getElementById('editTimeAlert');
         isEditTime() ? alertBox.classList.add('hidden') : alertBox.classList.remove('hidden');
     }
+    setInterval(updateUIBasedOnTime, 60000);
 
-    async function callApi(action, payload = {}) {
+    async function callApi(action, payload = {}, retries = 1) {
         try {
             const response = await fetch(APPS_SCRIPT_URL, {
                 method: 'POST',
@@ -172,51 +184,189 @@
             const result = await response.json();
             if (result.status === 'error') throw new Error(result.message);
             return result.data;
-        } catch (err) { throw err; }
+        } catch (err) {
+            if (retries > 0) {
+                await new Promise(r => setTimeout(r, 1500));
+                return callApi(action, payload, retries - 1);
+            }
+            throw err;
+        }
     }
 
     function handleLogin() {
       const code = document.getElementById('empCode').value;
-      if (!code) return;
+      if (!code) { Swal.fire('Warning', 'กรุณากรอกรหัสพนักงาน', 'warning'); return; }
+      document.getElementById('btnText').innerText = 'ตรวจสอบ...';
       document.getElementById('btnSpinner').classList.remove('hidden');
-      callApi('checkLogin', { empId: code }).then(data => {
-          if (data && data.valid) {
-              loggedInEmpCode = code;
-              document.getElementById('loginSection').classList.add('hidden');
-              document.getElementById('appSection').classList.remove('hidden');
-              if(code === 'HRJMT123') document.getElementById('exportExcelBtn').classList.remove('hidden');
-              updateUIBasedOnTime();
-              const d = new Date();
-              document.getElementById('datePicker').value = d.toISOString().split('T')[0];
-              loadReport();
-          } else { Swal.fire('Error', 'ไม่พบรหัสหรือไม่มีสิทธิ์เข้าใช้', 'error'); }
-      }).finally(() => document.getElementById('btnSpinner').classList.add('hidden'));
+      
+      callApi('checkLogin', { empId: code })
+        .then(data => {
+            if ((typeof data === 'object' && data.valid) || data === true) {
+                loggedInEmpCode = code;
+
+                if (loggedInEmpCode === 'HRJMT123') {
+                    document.getElementById('exportExcelBtn').classList.remove('hidden');
+                    document.getElementById('tabSummary').style.display = 'flex'; 
+                    switchTab('summary'); 
+                } else {
+                    document.getElementById('exportExcelBtn').classList.add('hidden');
+                    document.getElementById('tabSummary').style.display = 'none'; 
+                    switchTab('detail'); 
+                }
+
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('appSection').classList.remove('hidden');
+                updateUIBasedOnTime();
+                
+                const d = new Date();
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                document.getElementById('datePicker').value = `${yyyy}-${mm}-${dd}`;
+                
+                loadReport();
+            } else {
+                Swal.fire('Error', 'รหัสพนักงานไม่ถูกต้อง', 'error');
+            }
+        })
+        .catch(err => Swal.fire('Error', err.message, 'error'))
+        .finally(() => {
+            document.getElementById('btnText').innerText = 'เข้าสู่ระบบ';
+            document.getElementById('btnSpinner').classList.add('hidden');
+        });
     }
 
-    function handleLogout() { location.reload(); }
+    function handleLogout() {
+        loggedInEmpCode = '';
+        document.getElementById('empCode').value = '';
+        document.getElementById('appSection').classList.add('hidden');
+        document.getElementById('loginSection').classList.remove('hidden');
+        document.getElementById('exportExcelBtn').classList.add('hidden');
+    }
 
     function loadReport() {
         const dateVal = document.getElementById('datePicker').value;
+        if (!dateVal) return;
         document.getElementById('loading').classList.remove('hidden');
-        callApi('getSummaryByDate', { dateStr: dateVal, empId: loggedInEmpCode }).then(data => {
-            globalDetails = data.details || [];
-            renderSummaryTable(data.report, data.total);
-            prepareGroupingData();
-        }).finally(() => document.getElementById('loading').classList.add('hidden'));
+        document.getElementById('tableBody').innerHTML = '';
+        document.getElementById('detailTableBody').innerHTML = '';
+        
+        callApi('getSummaryByDate', { dateStr: dateVal, empId: loggedInEmpCode })
+            .then(data => {
+                globalDetails = data.details || [];
+                renderAll(data.report, data.total);
+            })
+            .catch(err => Swal.fire('Error', err.message, 'error'))
+            .finally(() => document.getElementById('loading').classList.add('hidden'));
+    }
+
+    function renderAll(reportData, totalData) {
+        if(!reportData) {
+            const calc = calculateSummaryFromDetails(globalDetails);
+            reportData = calc.report;
+            totalData = calc.total;
+        }
+        renderSummaryTable(reportData, totalData);
+        prepareGroupingData();
+    }
+
+    function calculateSummaryFromDetails(details) {
+       let summary = {};
+       let total = { count: 0, absent: 0, late: 0, sick: 0, personal: 0, vacation: 0, switchHoliday: 0, noInfo: 0 };
+       
+       details.forEach(item => {
+           let dept = item.dept || 'ไม่ระบุแผนก';
+           // ***** แก้ไขส่วนนี้ให้รับ Group ที่ส่งมาจากฝั่ง Backend *****
+           let displayDept = item.groupReport || dept;
+
+           if(!summary[displayDept]) summary[displayDept] = { name: displayDept, count:0, absent:0, late:0, sick:0, personal:0, vacation:0, switchHoliday:0, noInfo:0 };
+           summary[displayDept].count++; total.count++;
+           
+           const currentStatus = (item.reportIn || item.remark || "").toLowerCase();
+           const leaveText = (item.leaveStatus || "").toLowerCase();
+
+           if (currentStatus.includes("ทำงาน") || currentStatus.includes("working")) { /* working */ }
+           else if (currentStatus.includes("สาย") || currentStatus.includes("late")) { summary[displayDept].late++; total.late++; }
+           else if (currentStatus.includes("ขาด") || currentStatus.includes("absent")) { summary[displayDept].absent++; total.absent++; }
+           else if (currentStatus.includes("สลับวันหยุด")) { summary[displayDept].switchHoliday++; total.switchHoliday++; }
+           else if (currentStatus.includes("ลา") || (leaveText !== '-' && leaveText !== '')) {
+               if (currentStatus.includes("ป่วย") || leaveText.includes("ป่วย")) { summary[displayDept].sick++; total.sick++; }
+               else if (currentStatus.includes("กิจ") || leaveText.includes("กิจ")) { summary[displayDept].personal++; total.personal++; }
+               else if (currentStatus.includes("พักร้อน") || leaveText.includes("พักร้อน")) { summary[displayDept].vacation++; total.vacation++; }
+               else { summary[displayDept].noInfo++; total.noInfo++; }
+           } 
+           else { summary[displayDept].noInfo++; total.noInfo++; }
+       });
+       return { report: Object.values(summary).sort((a,b)=>b.count-a.count), total: total };
+    }
+
+    function executeStatusUpdate() {
+       if(pendingRowIndex === null || pendingStatusValue === null) return;
+       
+       if(!isEditTime()) { 
+           Swal.fire({icon: 'error', title: 'ไม่อยู่ในเวลาทำการ', text: '04:00 - 08:50 น.'});
+           closeConfirmModal(); return; 
+       }
+
+       const remarkInput = document.getElementById('remarkInput');
+       const remark = remarkInput.value.trim();
+       if (!remark) { 
+           remarkInput.classList.add('input-error'); 
+           document.getElementById('remarkError').classList.remove('hidden'); 
+           return; 
+       }
+       
+       document.getElementById('customConfirmModal').classList.add('hidden');
+
+       const targetIndex = globalDetails.findIndex(x => x.rowIndex === pendingRowIndex);
+       if (targetIndex > -1) {
+           globalDetails[targetIndex].reportIn = pendingStatusValue;
+       }
+       renderAll(); 
+
+       const toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
+       toast.fire({ icon: 'info', title: 'กำลังบันทึก...' });
+
+       const payload = { rowIndex: pendingRowIndex, newStatus: pendingStatusValue, remark: remark, empId: loggedInEmpCode };
+       
+       remarkInput.value = ''; 
+       document.getElementById('remarkError').classList.add('hidden');
+       pendingRowIndex = null; pendingStatusValue = null;
+
+       callApi('updateStatus', payload, 5)
+         .then(() => {
+            toast.fire({ icon: 'success', title: 'บันทึกสำเร็จ' });
+         })
+         .catch(err => {
+            Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ', text: 'ระบบจะรีโหลดข้อมูลใหม่' })
+            .then(() => loadReport());
+         });
+    }
+
+    function switchTab(tabName) {
+      const pSum = document.getElementById('pageSummary');
+      const pDet = document.getElementById('pageDetail');
+      const tSum = document.getElementById('tabSummary');
+      const tDet = document.getElementById('tabDetail');
+      const act = "px-6 py-2 rounded-md text-sm font-bold shadow-sm bg-white text-blue-700 border border-gray-200 transition-all flex items-center";
+      const inact = "px-6 py-2 rounded-md text-sm font-bold text-gray-500 hover:bg-gray-200 hover:text-gray-700 transition-all flex items-center";
+      if (tabName === 'summary') { pSum.classList.remove('hidden'); pDet.classList.add('hidden'); tSum.className = act; tDet.className = inact; } 
+      else { pSum.classList.add('hidden'); pDet.classList.remove('hidden'); tDet.className = act; tSum.className = inact; }
     }
 
     function renderSummaryTable(report, total) {
       const tbody = document.getElementById('tableBody');
       const tfoot = document.getElementById('tableFooter');
       let html = '';
-      const calcP = (v, m) => (m > 0 && v > 0) ? ((v / m) * 100).toFixed(2) + '%' : '-';
+      const calcP = (val, max) => (max > 0 && val > 0) ? ((val / max) * 100).toFixed(2) + '%' : '-';
+      const colorP = (val) => val > 0 ? 'text-red-600 font-bold' : 'text-gray-300';
       report.forEach((d, i) => {
         const loss = d.absent + d.late + d.sick + d.personal + d.vacation + d.switchHoliday + d.noInfo;
         const pct = d.count > 0 ? (loss / d.count) * 100 : 0;
-        html += `<tr><td>${i+1}</td><td class="text-dept">${d.name}</td><td class="font-bold bg-gray-50">${d.count}</td><td>${d.absent||''}</td><td>${d.late||''}</td><td>${d.sick||''}</td><td>${d.personal||''}</td><td>${d.vacation||''}</td><td>${d.switchHoliday||''}</td><td>${d.noInfo||''}</td><td class="bg-blue-50 font-bold">${loss||'-'}</td><td>${calcP(d.absent, d.count)}</td><td>${calcP(d.late, d.count)}</td><td>${calcP(d.sick, d.count)}</td><td>${calcP(d.personal, d.count)}</td><td>${calcP(d.vacation, d.count)}</td><td>${calcP(d.switchHoliday, d.count)}</td><td>${calcP(d.noInfo, d.count)}</td><td class="bg-red-50 font-bold">${pct.toFixed(2)}%</td></tr>`;
+        html += `<tr><td class="text-gray-500 num-cell">${i + 1}</td><td class="text-dept text-gray-700">${d.name}</td><td class="font-bold bg-gray-50 num-cell">${d.count}</td><td class="${d.absent>0?'text-red-600 font-bold':''} num-cell">${d.absent||''}</td><td class="${d.late>0?'text-red-600 font-bold':''} num-cell">${d.late||''}</td><td class="num-cell">${d.sick||''}</td><td class="num-cell">${d.personal||''}</td><td class="num-cell">${d.vacation||''}</td><td class="num-cell">${d.switchHoliday||''}</td><td class="num-cell ${d.noInfo>0?'text-red-600 font-bold':''}">${d.noInfo||''}</td><td class="bg-blue-50 font-bold text-blue-800 border-l border-r border-blue-200 num-cell">${loss||'-'}</td><td class="${colorP(d.absent)} num-cell">${calcP(d.absent, d.count)}</td><td class="${colorP(d.late)} num-cell">${calcP(d.late, d.count)}</td><td class="${colorP(d.sick)} num-cell">${calcP(d.sick, d.count)}</td><td class="${colorP(d.personal)} num-cell">${calcP(d.personal, d.count)}</td><td class="${colorP(d.vacation)} num-cell">${calcP(d.vacation, d.count)}</td><td class="${colorP(d.switchHoliday)} num-cell">${calcP(d.switchHoliday, d.count)}</td><td class="${colorP(d.noInfo)} num-cell">${calcP(d.noInfo, d.count)}</td><td class="bg-red-50 font-bold border-l border-red-200 num-cell ${pct>0?'text-red-600':'text-gray-400'}">${pct.toFixed(2)}%</td></tr>`;
       });
-      tbody.innerHTML = html;
-      tfoot.innerHTML = `<tr><td colspan="2" class="text-right pr-4">รวมทั้งสิ้น</td><td class="bg-gray-200">${total.count}</td><td>${total.absent}</td><td>${total.late}</td><td>${total.sick}</td><td>${total.personal}</td><td>${total.vacation}</td><td>${total.switchHoliday}</td><td>${total.noInfo}</td><td class="bg-blue-200">${total.absent+total.late+total.sick+total.personal+total.vacation+total.switchHoliday+total.noInfo}</td><td colspan="8"></td></tr>`;
+      tbody.innerHTML = html || `<tr><td colspan="19" class="py-8 text-center text-gray-400">ไม่พบข้อมูล</td></tr>`;
+      tfoot.innerHTML = `<tr class="text-sm bg-gray-100 border-t-2 border-gray-300"><td colspan="2" class="text-right pr-4 py-3 text-gray-600 font-bold">รวมทั้งสิ้น</td><td class="text-lg text-black bg-gray-200 num-cell font-bold">${total.count}</td><td class="${total.absent>0?'text-red-700 font-bold':''} num-cell">${total.absent}</td><td class="${total.late>0?'text-red-700 font-bold':''} num-cell">${total.late}</td><td class="num-cell font-bold">${total.sick}</td><td class="num-cell font-bold">${total.personal}</td><td class="num-cell font-bold">${total.vacation}</td><td class="num-cell font-bold">${total.switchHoliday}</td><td class="${total.noInfo>0?'text-red-700 font-bold':''} num-cell">${total.noInfo}</td><td class="bg-blue-200 text-blue-900 text-lg border-blue-300 num-cell font-bold">${total.absent+total.late+total.sick+total.personal+total.vacation+total.switchHoliday+total.noInfo}</td><td colspan="8"></td></tr>`;
     }
 
     function prepareGroupingData() {
@@ -225,62 +375,84 @@
         const r = (item.reportIn || "").toLowerCase();
         if (r.includes("ทำงาน")) groupedData['ทำงาน'].push(item);
         else if (r.includes("สาย")) groupedData['มาสาย'].push(item);
-        else if (r.includes("ขาด")) groupedData['ขาดงาน'].push(item);
+        else if (r.includes("ขาด") || r.includes("absent")) groupedData['ขาดงาน'].push(item);
         else if (r.includes("สลับวันหยุด")) groupedData['สลับวันหยุด'].push(item);
         else if (r.includes("ลา") || (item.leaveStatus && item.leaveStatus !== '-')) groupedData['ลางาน'].push(item);
         else groupedData['รอตรวจสอบสถานะ'].push(item);
       });
       renderFilterButtons();
-      selectGroup(currentActiveGroup);
+      selectGroup(currentActiveGroup); 
     }
 
     function renderFilterButtons() {
       const c = document.getElementById('filterBar');
       let h = '';
-      const cf = [ { k: 'รอตรวจสอบสถานะ', c: 'bg-gray-600' }, { k: 'มาสาย', c: 'bg-orange-500' }, { k: 'ขาดงาน', c: 'bg-red-600' }, { k: 'ลางาน', c: 'bg-green-600' }, { k: 'สลับวันหยุด', c: 'bg-indigo-500' }, { k: 'ทำงาน', c: 'bg-blue-600' } ];
+      const cf = [ { k: 'รอตรวจสอบสถานะ', l: '⚠ รอตรวจสอบ', c: 'bg-gray-600' }, { k: 'มาสาย', l: 'มาสาย', c: 'bg-orange-500' }, { k: 'ขาดงาน', l: 'ขาดงาน', c: 'bg-red-600' }, { k: 'ลางาน', l: 'ลางาน', c: 'bg-green-600' }, { k: 'สลับวันหยุด', l: 'สลับวันหยุด', c: 'bg-indigo-500' }, { k: 'ทำงาน', l: 'ทำงานปกติ', c: 'bg-blue-600' } ];
       cf.forEach(x => {
         const count = groupedData[x.k].length;
-        h += `<button onclick="selectGroup('${x.k}')" id="btn-${x.k}" class="flex items-center gap-2 px-4 py-2 rounded-lg text-white font-medium ${x.c} ${count===0?'opacity-40':''}"><span>${x.k}</span><span class="bg-white bg-opacity-20 px-2 rounded-md text-xs">${count}</span></button>`;
+        const op = count === 0 ? 'opacity-50 grayscale' : '';
+        h += `<button onclick="selectGroup('${x.k}')" id="btn-${x.k}" class="filter-btn relative flex items-center gap-2 px-4 py-2 rounded-lg text-white font-medium shadow-sm transition-all whitespace-nowrap ${x.c} ${op} hover:brightness-110"><span>${x.l}</span><span class="bg-white bg-opacity-20 px-2 py-0.5 rounded-md text-xs font-bold">${count}</span></button>`;
       });
       c.innerHTML = h;
     }
 
     function selectGroup(key) {
       currentActiveGroup = key;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('ring-4', 'ring-opacity-30', 'scale-105', 'font-bold'));
+      const b = document.getElementById(`btn-${key}`);
+      if(b) b.classList.add('ring-4', 'ring-opacity-30', 'scale-105', 'font-bold');
       document.getElementById('currentGroupTitle').innerText = `กลุ่ม: ${key}`;
       handleSearch();
     }
 
     function handleSearch() {
-      const d = document.getElementById('searchDept').value.toUpperCase();
-      const n = document.getElementById('searchName').value.toUpperCase();
-      const filtered = (groupedData[currentActiveGroup] || []).filter(i => (i.dept||"").toUpperCase().includes(d) && (i.name||"").toUpperCase().includes(n));
-      renderTableRows(filtered);
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            const b = document.getElementById('searchBranch').value.toUpperCase();
+            const d = document.getElementById('searchDept').value.toUpperCase();
+            const n = document.getElementById('searchName').value.toUpperCase();
+            const filtered = groupedData[currentActiveGroup].filter(i => {
+                 const nm = (i.name || "").toUpperCase();
+                 const dp = (i.dept || "").toUpperCase(); 
+                 return dp.includes(b) && dp.includes(d) && nm.includes(n);
+            });
+            renderTableRows(filtered, currentActiveGroup);
+        }, 300); 
     }
 
-    function renderTableRows(items) {
+    function renderTableRows(items, groupKey) {
       const tb = document.getElementById('detailTableBody');
       const canEdit = isEditTime();
+      if (!items.length) { tb.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-gray-400">ไม่พบข้อมูล</td></tr>`; document.getElementById('detailCount').innerText='0 รายการ'; return; }
+      
       let html = '';
-      items.forEach((emp, i) => {
+      const max = 200;
+      items.slice(0, max).forEach((emp, i) => {
         const isSuper = loggedInEmpCode === 'HRJMT123';
+        const showDrop = groupKey === 'รอตรวจสอบสถานะ' || isSuper;
         const st = emp.reportIn || "รอตรวจสอบสถานะ";
-        const drop = (currentActiveGroup === 'รอตรวจสอบสถานะ' || isSuper) ? 
-          `<select onchange="saveStatus(${emp.rowIndex}, this.value, this)" class="w-full text-xs border rounded p-1 ${canEdit?'bg-yellow-50':'bg-gray-100'}" ${canEdit?'':'disabled'}>
-            <option value="รอตรวจสอบสถานะ" ${st==='รอตรวจสอบสถานะ'?'selected':''}>รอตรวจสอบ</option>
-            <option value="ทำงาน" ${st==='ทำงาน'?'selected':''}>ทำงาน</option>
-            <option value="มาสาย" ${st==='มาสาย'?'selected':''}>มาสาย</option>
-            <option value="ลาป่วย" ${st==='ลาป่วย'?'selected':''}>ลาป่วย</option>
-            <option value="ลากิจ" ${st==='ลากิจ'?'selected':''}>ลากิจ</option>
-            <option value="ลาพักร้อน" ${st==='ลาพักร้อน'?'selected':''}>พักร้อน</option>
-            <option value="ขาดงาน" ${st==='ขาดงาน'?'selected':''}>ขาดงาน</option>
-            <option value="สลับวันหยุด" ${st==='สลับวันหยุด'?'selected':''}>สลับวันหยุด</option>
-          </select>` : `<span class="px-2 py-1 rounded bg-gray-100 text-xs">${st}</span>`;
         
-        html += `<tr><td class="text-center">${i+1}</td><td>${emp.name}</td><td class="text-xs text-gray-500">${emp.dept}</td><td class="text-center">${emp.timeIn||'-'}</td><td class="text-center">${emp.timeOut||'-'}</td><td>${drop}</td></tr>`;
+        const drop = showDrop ? 
+            `<select onchange="saveStatus(${emp.rowIndex}, this.value, this)" class="w-full text-xs border rounded p-1 outline-none ${canEdit?'border-yellow-400 bg-yellow-50 cursor-pointer':'bg-gray-100 cursor-not-allowed'}" ${canEdit?'':'disabled'}>
+                <option value="รอตรวจสอบสถานะ" ${(st==='รอตรวจสอบสถานะ' || st==='รอตรวจสอบ')?'selected':''}>รอตรวจสอบสถานะ</option>
+                <option value="ทำงาน" ${st==='ทำงาน'?'selected':''}>ทำงาน</option>
+                <option value="มาสาย" ${st==='มาสาย'?'selected':''}>มาสาย</option>
+                <option value="ลาป่วย" ${st==='ลาป่วย'?'selected':''}>ลาป่วย</option>
+                <option value="ลากิจ" ${st==='ลากิจ'?'selected':''}>ลากิจ</option>
+                <option value="ลาพักร้อน" ${st==='ลาพักร้อน'?'selected':''}>ลาพักร้อน</option>
+                <option value="ขาดงาน" ${st==='ขาดงาน'?'selected':''}>ขาดงาน</option>
+                <option value="สลับวันหยุด" ${st==='สลับวันหยุด'?'selected':''}>สลับวันหยุด</option>
+                <option value="ลาคลอด" ${st==='ลาคลอด'?'selected':''}>ลาคลอด</option>
+                <option value="ลาไม่รับค่าจ้าง" ${st==='ลาไม่รับค่าจ้าง'?'selected':''}>ลาไม่รับค่าจ้าง</option>
+                <option value="ลาบวช" ${st==='ลาบวช'?'selected':''}>ลาบวช</option>
+                <option value="ลาออก/พ้นสภาพ" ${st==='ลาออก/พ้นสภาพ'?'selected':''}>ลาออก/พ้นสภาพ</option>
+            </select>` : `<span class="px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-600">${st}</span>`;
+        
+        html += `<tr class="hover:bg-blue-50 transition-colors"><td class="px-4 py-2 text-center text-gray-400 text-xs">${i+1}</td><td class="px-4 py-2 font-medium text-gray-800">${emp.name}</td><td class="px-4 py-2 text-gray-500 text-xs">${emp.dept}</td><td class="px-4 py-2 text-center text-green-600 font-mono">${emp.timeIn||'--:--'}</td><td class="px-4 py-2 text-center text-red-600 font-mono">${emp.timeOut||'--:--'}</td><td class="px-4 py-2">${drop}</td></tr>`;
       });
-      tb.innerHTML = html || '<tr><td colspan="6" class="text-center py-10">ไม่พบข้อมูล</td></tr>';
-      document.getElementById('detailCount').innerText = `รายการทั้งหมด ${items.length} คน`;
+      if(items.length > max) html += `<tr><td colspan="6" class="py-2 text-center text-blue-600">ยังมีอีก ${items.length-max} รายการ...</td></tr>`;
+      tb.innerHTML = html;
+      document.getElementById('detailCount').innerText = `แสดง ${Math.min(items.length, max)} จาก ${items.length} รายการ`;
     }
 
     function saveStatus(rowIndex, val, el) {
@@ -288,35 +460,18 @@
        document.getElementById('confirmStatusText').innerText = val;
        document.getElementById('customConfirmModal').classList.remove('hidden');
     }
-
     function closeConfirmModal() {
        document.getElementById('customConfirmModal').classList.add('hidden');
-       if(pendingSelectElement) pendingSelectElement.value = "รอตรวจสอบสถานะ";
+       if(pendingSelectElement) pendingSelectElement.value = "รอตรวจสอบสถานะ"; 
+       pendingRowIndex = null;
     }
-
-    function executeStatusUpdate() {
-        const remark = document.getElementById('remarkInput').value.trim();
-        if(!remark) { document.getElementById('remarkError').classList.remove('hidden'); return; }
-        
-        document.getElementById('customConfirmModal').classList.add('hidden');
-        callApi('updateStatus', { rowIndex: pendingRowIndex, newStatus: pendingStatusValue, remark: remark, empId: loggedInEmpCode })
-        .then(() => { Swal.fire('สำเร็จ', 'บันทึกข้อมูลเรียบร้อย', 'success'); loadReport(); })
-        .catch(err => Swal.fire('Error', err.message, 'error'));
-    }
-
-    function switchTab(tab) {
-      document.getElementById('pageSummary').classList.toggle('hidden', tab !== 'summary');
-      document.getElementById('pageDetail').classList.toggle('hidden', tab !== 'detail');
-      document.getElementById('tabSummary').className = tab === 'summary' ? 'px-6 py-2 rounded-md text-sm font-bold shadow-sm bg-white text-blue-700 border border-gray-200' : 'px-6 py-2 rounded-md text-sm font-bold text-gray-500 hover:bg-gray-200';
-      document.getElementById('tabDetail').className = tab === 'detail' ? 'px-6 py-2 rounded-md text-sm font-bold shadow-sm bg-white text-blue-700 border border-gray-200' : 'px-6 py-2 rounded-md text-sm font-bold text-gray-500 hover:bg-gray-200';
-    }
-
+    
     function exportExcel() {
-        if (!globalDetails.length) return;
+        if (!globalDetails.length) { Swal.fire('Info', 'ไม่มีข้อมูล', 'info'); return; }
         const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.json_to_sheet(globalDetails);
-        XLSX.utils.book_append_sheet(wb, ws, "Attendance");
-        XLSX.writeFile(wb, "Report.xlsx");
+        const wsData = globalDetails.map((e,i) => ({ 'No': i+1, 'Name': e.name, 'Dept': e.dept, 'In': e.timeIn, 'Out': e.timeOut, 'Status': e.reportIn, 'Remark': e.remark||'' }));
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(wsData), "TimeReport");
+        XLSX.writeFile(wb, `Report_${document.getElementById('datePicker').value}.xlsx`);
     }
   </script>
 </body>
