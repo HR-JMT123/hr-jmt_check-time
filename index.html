@@ -154,7 +154,7 @@
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzd67tycyEf4mPEJAR98exzr3bh8RuGc7s3yYCDoTbuW6Tw1-_BFQe0k0UjH58fLBbR/exec'; 
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx_eKoh2FhHJmUsVkZecHf_HBinjhB4vqWCnxaYDOzq8yeONqkuwrs3DXQzuWEqmWj8/exec'; 
 
     let globalDetails = [];
     let loggedInEmpCode = ''; 
@@ -276,7 +276,7 @@
        
        details.forEach(item => {
            let dept = item.dept || 'ไม่ระบุแผนก';
-           // ***** แก้ไขส่วนนี้ให้รับ Group ที่ส่งมาจากฝั่ง Backend *****
+           // ***** แก้ไขส่วนนี้ให้รับ Group ที่ส่งมาจากฝั่ง Backend (คอลัมน์ V) *****
            let displayDept = item.groupReport || dept;
 
            if(!summary[displayDept]) summary[displayDept] = { name: displayDept, count:0, absent:0, late:0, sick:0, personal:0, vacation:0, switchHoliday:0, noInfo:0 };
