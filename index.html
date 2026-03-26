@@ -182,7 +182,13 @@
            <table class="w-full text-sm text-left border-collapse">
              <thead class="bg-gray-800 text-white uppercase text-xs sticky top-0 z-10">
                <tr>
-                 <th class="px-4 py-3 text-center w-16">#</th><th class="px-4 py-3">ชื่อ-นามสกุล</th><th class="px-4 py-3">แผนก</th><th class="px-4 py-3 text-center">Time In</th><th class="px-4 py-3 text-center">Time Out</th><th class="px-4 py-3 w-48">สถานะ (Report In)</th>
+                 <th class="px-4 py-3 text-center w-16">#</th>
+                 <th class="px-4 py-3">ชื่อ-นามสกุล</th>
+                 <th class="px-4 py-3">แผนก</th>
+                 <th class="px-4 py-3 text-center">Time In</th>
+                 <th class="px-4 py-3 text-center">Time Out</th>
+                 <th class="px-4 py-3">หมายเหตุ</th>
+                 <th class="px-4 py-3 w-48">สถานะ (Report In)</th>
                </tr>
              </thead>
              <tbody id="detailTableBody" class="divide-y divide-gray-200 bg-white"></tbody>
@@ -194,7 +200,7 @@
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwmniQVEcNRdO3P7sJnZn0JAs2mexun9WLjzkNuaiT7jzX-RNs_2wI2VPucMV78FE0M/exec'; 
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx0R1g8FXSS4NsTVCC-CJcx4b5rykpgP5-DknT-8HikJXAbzrPnhpp4V2MAntKowOsw/exec'; 
 
     let globalDetails = [];
     let loggedInEmpCode = ''; 
@@ -643,7 +649,7 @@
     function renderTableRows(items, groupKey) {
       const tb = document.getElementById('detailTableBody');
       const canEdit = isEditTime();
-      if (!items.length) { tb.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-gray-400">ไม่พบข้อมูล</td></tr>`; document.getElementById('detailCount').innerText='0 รายการ'; return; }
+      if (!items.length) { tb.innerHTML = `<tr><td colspan="7" class="py-10 text-center text-gray-400">ไม่พบข้อมูล</td></tr>`; document.getElementById('detailCount').innerText='0 รายการ'; return; }
       
       let html = '';
       const max = 200;
@@ -651,7 +657,14 @@
         const isSuper = loggedInEmpCode === 'HRJMT123';
         const showDrop = groupKey === 'รอตรวจสอบสถานะ' || isSuper;
         const st = emp.reportIn || "รอตรวจสอบสถานะ";
+        const remarkText = emp.remark || '-';
         
+        // เงื่อนไขสำหรับแจ้งเตือนหากมีหมายเหตุแต่สถานะยังคงเป็นรอตรวจสอบ
+        let errorAlert = '';
+        if ((st === 'รอตรวจสอบสถานะ' || st === '') && emp.remark !== '') {
+            errorAlert = `<div class="text-[10px] text-red-500 mt-1 font-semibold leading-tight break-words">⚠ กรุณาอัปเดตใหม่อีกครั้ง<br>เนื่องจากมีผู้ใช้จำนวนมากทำให้เกิดข้อผิดพลาด</div>`;
+        }
+
         const drop = showDrop ? 
             `<select onchange="saveStatus(${emp.rowIndex}, this.value, this)" class="w-full text-xs border rounded p-1 outline-none ${canEdit?'border-yellow-400 bg-yellow-50 cursor-pointer':'bg-gray-100 cursor-not-allowed'}" ${canEdit?'':'disabled'}>
                 <option value="รอตรวจสอบสถานะ" ${(st==='รอตรวจสอบสถานะ' || st==='รอตรวจสอบ')?'selected':''}>รอตรวจสอบสถานะ</option>
@@ -666,11 +679,19 @@
                 <option value="ลาไม่รับค่าจ้าง" ${st==='ลาไม่รับค่าจ้าง'?'selected':''}>ลาไม่รับค่าจ้าง</option>
                 <option value="ลาบวช" ${st==='ลาบวช'?'selected':''}>ลาบวช</option>
                 <option value="ลาออก/พ้นสภาพ" ${st==='ลาออก/พ้นสภาพ'?'selected':''}>ลาออก/พ้นสภาพ</option>
-            </select>` : `<span class="px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-600">${st}</span>`;
+            </select>${errorAlert}` : `<span class="px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-600">${st}</span>${errorAlert}`;
         
-        html += `<tr class="hover:bg-blue-50 transition-colors"><td class="px-4 py-2 text-center text-gray-400 text-xs">${i+1}</td><td class="px-4 py-2 font-medium text-gray-800">${emp.name}</td><td class="px-4 py-2 text-gray-500 text-xs">${emp.dept}</td><td class="px-4 py-2 text-center text-green-600 font-mono">${emp.timeIn||'--:--'}</td><td class="px-4 py-2 text-center text-red-600 font-mono">${emp.timeOut||'--:--'}</td><td class="px-4 py-2">${drop}</td></tr>`;
+        html += `<tr class="hover:bg-blue-50 transition-colors">
+            <td class="px-4 py-2 text-center text-gray-400 text-xs">${i+1}</td>
+            <td class="px-4 py-2 font-medium text-gray-800">${emp.name}</td>
+            <td class="px-4 py-2 text-gray-500 text-xs">${emp.dept}</td>
+            <td class="px-4 py-2 text-center text-green-600 font-mono">${emp.timeIn||'--:--'}</td>
+            <td class="px-4 py-2 text-center text-red-600 font-mono">${emp.timeOut||'--:--'}</td>
+            <td class="px-4 py-2 text-gray-600 text-xs">${remarkText}</td>
+            <td class="px-4 py-2">${drop}</td>
+        </tr>`;
       });
-      if(items.length > max) html += `<tr><td colspan="6" class="py-2 text-center text-blue-600">ยังมีอีก ${items.length-max} รายการ...</td></tr>`;
+      if(items.length > max) html += `<tr><td colspan="7" class="py-2 text-center text-blue-600">ยังมีอีก ${items.length-max} รายการ...</td></tr>`;
       tb.innerHTML = html;
       document.getElementById('detailCount').innerText = `แสดง ${Math.min(items.length, max)} จาก ${items.length} รายการ`;
     }
