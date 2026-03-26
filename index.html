@@ -104,7 +104,17 @@
 
     <div id="pageSummary" class="block space-y-4 animate-[fadeIn_0.3s_ease-out]">
       <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
-        <div class="p-4 border-b border-gray-200 bg-blue-50"><h2 class="font-bold text-lg text-blue-900">ตารางแสดงสถิติพนักงานประจำวัน</h2></div>
+        <div class="p-4 border-b border-gray-200 bg-blue-50 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <h2 class="font-bold text-lg text-blue-900">ตารางแสดงสถิติพนักงานประจำวัน</h2>
+          <div class="flex flex-wrap gap-2">
+              <select id="filterSummaryWorkStatus" onchange="applySummaryFilter()" class="border border-gray-300 rounded px-3 py-1.5 text-sm outline-none bg-white text-gray-700 shadow-sm cursor-pointer">
+                  <option value="">-- สถานะการทำงานทั้งหมด --</option>
+              </select>
+              <select id="filterSummaryEmpCode" onchange="applySummaryFilter()" class="border border-gray-300 rounded px-3 py-1.5 text-sm outline-none bg-white text-gray-700 shadow-sm cursor-pointer">
+                  <option value="">-- รหัสพนักงานทั้งหมด --</option>
+              </select>
+          </div>
+        </div>
         <div class="overflow-x-auto">
           <table class="report-table">
             <thead>
@@ -154,7 +164,7 @@
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx_eKoh2FhHJmUsVkZecHf_HBinjhB4vqWCnxaYDOzq8yeONqkuwrs3DXQzuWEqmWj8/exec'; 
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyEtMvfnCzXCHdsxAbMcqzn9kMqsRpGqCmK1xENSZc7Sg8xLzPng3VlCDvcNaKREJii/exec'; 
 
     let globalDetails = [];
     let loggedInEmpCode = ''; 
@@ -254,11 +264,83 @@
         callApi('getSummaryByDate', { dateStr: dateVal, empId: loggedInEmpCode })
             .then(data => {
                 globalDetails = data.details || [];
-                renderAll(data.report, data.total);
+                
+                // ตรวจสอบและสร้างตัวกรอง
+                populateSummaryFilters();
+                
+                // ตรวจสอบว่ามีการเลือกตัวกรองค้างไว้หรือไม่
+                const statusFilter = document.getElementById('filterSummaryWorkStatus').value;
+                const codeFilter = document.getElementById('filterSummaryEmpCode').value;
+                
+                if (statusFilter || codeFilter) {
+                    applySummaryFilter();
+                    prepareGroupingData();
+                } else {
+                    renderAll(data.report, data.total);
+                }
             })
             .catch(err => Swal.fire('Error', err.message, 'error'))
             .finally(() => document.getElementById('loading').classList.add('hidden'));
     }
+
+    // --- ฟังก์ชันตัวกรองของ Summary ---
+    function populateSummaryFilters() {
+        const statusSelect = document.getElementById('filterSummaryWorkStatus');
+        const codeSelect = document.getElementById('filterSummaryEmpCode');
+        
+        const currentStatus = statusSelect.value;
+        const currentCode = codeSelect.value;
+
+        statusSelect.innerHTML = '<option value="">-- สถานะการทำงานทั้งหมด --</option>';
+        codeSelect.innerHTML = '<option value="">-- รหัสพนักงานทั้งหมด --</option>';
+
+        const statuses = new Set();
+        const codes = new Set();
+
+        globalDetails.forEach(item => {
+            if (item.workStatus && item.workStatus !== '-') statuses.add(item.workStatus);
+            if (item.empCode) {
+                // ตัด 4 ตัวหน้ามาแสดงเป็นกลุ่ม
+                const codeGroup = item.empCode.length >= 4 ? item.empCode.substring(0, 4) : item.empCode;
+                codes.add(codeGroup);
+            }
+        });
+
+        Array.from(statuses).sort().forEach(st => {
+            const opt = document.createElement('option');
+            opt.value = st;
+            opt.innerText = st;
+            statusSelect.appendChild(opt);
+        });
+
+        Array.from(codes).sort().forEach(cd => {
+            const opt = document.createElement('option');
+            opt.value = cd;
+            opt.innerText = cd.length === 4 ? cd + 'xxx' : cd; // แสดงเป็นรูปแบบ 4ตัวหน้าแล้วตามด้วย xxx
+            codeSelect.appendChild(opt);
+        });
+
+        if (currentStatus && statuses.has(currentStatus)) statusSelect.value = currentStatus;
+        if (currentCode && codes.has(currentCode)) codeSelect.value = currentCode;
+    }
+
+    function applySummaryFilter() {
+        const statusFilter = document.getElementById('filterSummaryWorkStatus').value;
+        const codeFilter = document.getElementById('filterSummaryEmpCode').value;
+
+        let filteredDetails = globalDetails;
+
+        if (statusFilter) {
+            filteredDetails = filteredDetails.filter(item => item.workStatus === statusFilter);
+        }
+        if (codeFilter) {
+            filteredDetails = filteredDetails.filter(item => item.empCode && item.empCode.startsWith(codeFilter));
+        }
+
+        const calc = calculateSummaryFromDetails(filteredDetails);
+        renderSummaryTable(calc.report, calc.total);
+    }
+    // ---------------------------------
 
     function renderAll(reportData, totalData) {
         if(!reportData) {
@@ -276,7 +358,6 @@
        
        details.forEach(item => {
            let dept = item.dept || 'ไม่ระบุแผนก';
-           // ***** แก้ไขส่วนนี้ให้รับ Group ที่ส่งมาจากฝั่ง Backend (คอลัมน์ V) *****
            let displayDept = item.groupReport || dept;
 
            if(!summary[displayDept]) summary[displayDept] = { name: displayDept, count:0, absent:0, late:0, sick:0, personal:0, vacation:0, switchHoliday:0, noInfo:0 };
@@ -322,7 +403,15 @@
        if (targetIndex > -1) {
            globalDetails[targetIndex].reportIn = pendingStatusValue;
        }
-       renderAll(); 
+       
+       // รีโหลดหน้า Summary ทันทีโดยให้คำนึงถึงฟิลเตอร์ที่เลือกไว้
+       const statusFilter = document.getElementById('filterSummaryWorkStatus').value;
+       const codeFilter = document.getElementById('filterSummaryEmpCode').value;
+       if (statusFilter || codeFilter) {
+           applySummaryFilter();
+       } else {
+           renderAll(); 
+       }
 
        const toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
        toast.fire({ icon: 'info', title: 'กำลังบันทึก...' });
