@@ -710,7 +710,8 @@
     function exportExcel() {
         if (!globalDetails.length) { Swal.fire('Info', 'ไม่มีข้อมูล', 'info'); return; }
         const wb = XLSX.utils.book_new();
-        const wsData = globalDetails.map((e,i) => ({ 'No': i+1, 'Name': e.name, 'Dept': e.dept, 'In': e.timeIn, 'Out': e.timeOut, 'Status': e.reportIn, 'Remark': e.remark||'' }));
+        // เพิ่ม 'Emp Code': e.empCode เข้าไปในการ Mapping ข้อมูลสำหรับออก Excel
+        const wsData = globalDetails.map((e,i) => ({ 'No': i+1, 'Emp Code': e.empCode, 'Name': e.name, 'Dept': e.dept, 'In': e.timeIn, 'Out': e.timeOut, 'Status': e.reportIn, 'Remark': e.remark||'' }));
         XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(wsData), "TimeReport");
         XLSX.writeFile(wb, `Report_${document.getElementById('datePicker').value}.xlsx`);
     }
