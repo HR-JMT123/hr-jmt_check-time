@@ -200,7 +200,7 @@
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzPAXZg1ulcXWp6CRJ8-Urpbo4As6xeAy_gzo1byrsdHpQ7KkLKAWx6M5wzocCEJw1F/exec'; 
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyyQjhhMU6l_4lZDy-pQU_BYd4lQuS0G4OxwqBcSxtcxxurrOBuiJYTwCZkWwsh3EWu/exec'; 
 
     let globalDetails = [];
     let loggedInEmpCode = ''; 
@@ -321,7 +321,7 @@
         document.getElementById('appSection').classList.add('hidden');
         document.getElementById('loginSection').classList.remove('hidden');
         document.getElementById('exportExcelBtn').classList.add('hidden');
-        isInitialFilterLoad = true; // รีเซ็ตการโหลดตัวกรอง
+        isInitialFilterLoad = true; 
     }
 
     function loadReport() {
@@ -336,10 +336,8 @@
             .then(data => {
                 globalDetails = data.details || [];
                 
-                // สร้าง Checkbox List และประมวลผลให้เลือกทั้งหมดในการโหลดครั้งแรก
                 populateSummaryFilters();
                 
-                // ฟิลเตอร์และแสดงผล
                 applySummaryFilter();
                 prepareGroupingData();
             })
@@ -347,7 +345,6 @@
             .finally(() => document.getElementById('loading').classList.add('hidden'));
     }
 
-    // --- ฟังก์ชันสร้าง Checkbox ---
     function populateSummaryFilters() {
         const statusContainer = document.getElementById('statusCheckboxContainer');
         const codeContainer = document.getElementById('empCodeCheckboxContainer');
@@ -362,12 +359,10 @@
             const st = item.reportIn || 'รอตรวจสอบสถานะ';
             statuses.add(st);
             
-            // หากไม่มีรหัสพนักงาน ให้แสดงเป็น 'ไม่ระบุรหัส'
             const prefix = item.empCode ? (item.empCode.length >= 4 ? item.empCode.substring(0, 4) : item.empCode) : 'ไม่ระบุรหัส';
             codes.add(prefix);
         });
 
-        // ติ๊กเลือกทั้งหมด หากเป็นการโหลดครั้งแรก
         if (isInitialFilterLoad) {
             statuses.forEach(st => selectedSummaryStatuses.add(st));
             codes.forEach(cd => selectedSummaryCodes.add(cd));
@@ -396,7 +391,6 @@
         });
     }
 
-    // --- ฟังก์ชันใช้ฟิลเตอร์ พร้อมสั่งเรนเดอร์ตารางและกราฟ ---
     function applySummaryFilter() {
         const checkedStatusInputs = document.querySelectorAll('#statusCheckboxContainer input:checked');
         const checkedCodeInputs = document.querySelectorAll('#empCodeCheckboxContainer input:checked');
@@ -407,7 +401,6 @@
         selectedSummaryStatuses = new Set(checkedStatuses);
         selectedSummaryCodes = new Set(checkedCodes);
 
-        // กรองข้อมูลตามที่ติ๊กเลือก
         let filteredDetails = globalDetails.filter(item => {
             const st = item.reportIn || 'รอตรวจสอบสถานะ';
             const passStatus = checkedStatuses.includes(st);
@@ -420,12 +413,9 @@
 
         const calc = calculateSummaryFromDetails(filteredDetails);
         
-        // แสดงตาราง
         renderSummaryTable(calc.report, calc.total);
-        // แสดงกราฟ
         renderCharts(calc.report, calc.total);
     }
-    // ---------------------------------
 
     function calculateSummaryFromDetails(details) {
        let summary = {};
@@ -456,23 +446,19 @@
        return { report: Object.values(summary).sort((a,b)=>b.count-a.count), total: total };
     }
 
-    // --- ฟังก์ชันสร้าง/อัปเดตกราฟ (แท่ง เส้น วงกลม) ---
     function renderCharts(report, total) {
         document.getElementById('chartsContainer').classList.remove('hidden');
 
-        // ทำลายกราฟเก่าถ้ามี เพื่อป้องกันการซ้อนทับ
         if(barChartInst) barChartInst.destroy();
         if(pieChartInst) pieChartInst.destroy();
         if(lineChartInst) lineChartInst.destroy();
 
-        // 1. จัดเตรียมข้อมูลสำหรับ Pie และ Bar (ภาพรวมสถิติสถานะ)
         const statusLabels = ['ขาดงาน', 'มาสาย', 'ลาป่วย', 'ลากิจ', 'พักร้อน', 'สลับวันหยุด', 'ไม่แจ้งข้อมูล'];
         const statusData = [total.absent, total.late, total.sick, total.personal, total.vacation, total.switchHoliday, total.noInfo];
         const bgColors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6', '#6b7280'];
 
         Chart.defaults.font.family = "'Sarabun', sans-serif";
 
-        // สร้างกราฟแท่ง (Bar)
         const ctxBar = document.getElementById('barChart').getContext('2d');
         barChartInst = new Chart(ctxBar, {
             type: 'bar',
@@ -486,7 +472,6 @@
             }
         });
 
-        // สร้างกราฟวงกลม (Pie)
         const ctxPie = document.getElementById('pieChart').getContext('2d');
         pieChartInst = new Chart(ctxPie, {
             type: 'pie',
@@ -497,10 +482,8 @@
             }
         });
 
-        // 2. จัดเตรียมข้อมูลกราฟเส้น (% สูญเสียสูงสุด 10 อันดับส่วนงาน)
         const topDepts = report.slice(0, 10);
         const deptLabels = topDepts.map(d => {
-            // ตัดคำยาวเกินให้พอดีหน้าจอ
             return d.name.length > 15 ? d.name.substring(0, 15) + '...' : d.name;
         });
         const deptLossPct = topDepts.map(d => {
@@ -508,7 +491,6 @@
             return d.count > 0 ? ((loss / d.count) * 100).toFixed(2) : 0;
         });
 
-        // สร้างกราฟเส้น (Line)
         const ctxLine = document.getElementById('lineChart').getContext('2d');
         lineChartInst = new Chart(ctxLine, {
             type: 'line',
@@ -543,7 +525,6 @@
        const confirmBtn = document.getElementById('confirmUpdateBtn');
        const cancelBtn = document.getElementById('cancelUpdateBtn');
 
-       // ล็อกปุ่มเพื่อป้องกันการกดซ้ำซ้อนหรือค้างระหว่างรอคิว
        confirmBtn.disabled = true;
        confirmBtn.innerHTML = 'กำลังบันทึก...';
        confirmBtn.classList.add('opacity-50', 'cursor-not-allowed');
@@ -553,7 +534,6 @@
        
        callApi('updateStatus', payload, 3)
          .then(() => {
-            // อัพเดทตัวแปร local
             const targetIndex = globalDetails.findIndex(x => x.rowIndex === pendingRowIndex);
             if (targetIndex > -1) {
                 globalDetails[targetIndex].reportIn = pendingStatusValue;
@@ -574,7 +554,6 @@
             Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ', text: 'ระบบกำลังดำเนินการคิว กรุณากดบันทึกใหม่อีกครั้ง' });
          })
          .finally(() => {
-            // ปลดล็อกปุ่ม
             confirmBtn.disabled = false;
             confirmBtn.innerHTML = 'ยืนยัน';
             confirmBtn.classList.remove('opacity-50', 'cursor-not-allowed');
@@ -672,7 +651,6 @@
         const st = emp.reportIn || "รอตรวจสอบสถานะ";
         const remarkText = emp.remark || '-';
         
-        // เช็คเงื่อนไขตามที่คุณต้องการ: Time in มีเวลาแล้ว แต่สถานะรอตรวจสอบ
         const hasTimeIn = emp.timeIn && emp.timeIn.trim() !== '' && emp.timeIn.trim() !== '--:--';
         
         let errorAlert = '';
@@ -682,11 +660,9 @@
 
         let drop = '';
         if (hasTimeIn && (st === 'รอตรวจสอบสถานะ' || st === '')) {
-            // ไม่ให้กดบันทึก แจ้งระบบกำลังอัพเดท
             drop = `<span class="px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-600">รอตรวจสอบสถานะ</span>
                     <div class="text-[10px] text-blue-600 mt-1 font-semibold leading-tight break-words">ระบบกำลังอัพเดท รอรีเฟรชใหม่อีกครั้ง</div>`;
         } else {
-            // โหมดปกติ
             drop = showDrop ? 
             `<select onchange="saveStatus(${emp.rowIndex}, this.value, this)" class="w-full text-xs border rounded p-1 outline-none ${canEdit?'border-yellow-400 bg-yellow-50 cursor-pointer':'bg-gray-100 cursor-not-allowed'}" ${canEdit?'':'disabled'}>
                 <option value="รอตรวจสอบสถานะ" ${(st==='รอตรวจสอบสถานะ' || st==='รอตรวจสอบ')?'selected':''}>รอตรวจสอบสถานะ</option>
@@ -733,7 +709,6 @@
     function exportExcel() {
         if (!globalDetails.length) { Swal.fire('Info', 'ไม่มีข้อมูล', 'info'); return; }
         const wb = XLSX.utils.book_new();
-        // เพิ่ม 'Emp Code': e.empCode เข้าไปในการ Mapping ข้อมูลสำหรับออก Excel
         const wsData = globalDetails.map((e,i) => ({ 'No': i+1, 'Emp Code': e.empCode, 'Name': e.name, 'Dept': e.dept, 'In': e.timeIn, 'Out': e.timeOut, 'Status': e.reportIn, 'Remark': e.remark||'' }));
         XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(wsData), "TimeReport");
         XLSX.writeFile(wb, `Report_${document.getElementById('datePicker').value}.xlsx`);
