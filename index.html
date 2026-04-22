@@ -200,7 +200,7 @@
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzaP-UOtYDz7xkSclx4cvHMedHV6CCrMzzwQbr91EufS3e_pCFYtEXslB7NzuOqo_vX/exec'; 
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwZytck6syTZjar-Rb7Q5t3oyVpYGZKwI8l8aAfsDMmY-Hjbv1-VueEV5l3yYvDeDr-/exec'; 
 
     let globalDetails = [];
     let loggedInEmpCode = ''; 
@@ -208,6 +208,7 @@
     let searchTimeout = null;
     let pendingRowIndex = null, pendingStatusValue = null, pendingSelectElement = null; 
 
+    // ตัวแปรเก็บสถานะเช็คบ็อกซ์และแฟล็ก
     let selectedSummaryStatuses = new Set();
     let selectedSummaryCodes = new Set();
     let isInitialFilterLoad = true;
@@ -329,6 +330,9 @@
         document.getElementById('detailTableBody').innerHTML = '';
         document.getElementById('chartsContainer').classList.add('hidden');
         
+        // ให้ค่าเริ่มต้นคือเลือกทั้งหมดทุกครั้งที่โหลดข้อมูล
+        isInitialFilterLoad = true;
+        
         callApi('getSummaryByDate', { dateStr: dateVal, empId: loggedInEmpCode })
             .then(data => {
                 globalDetails = data.details || [];
@@ -359,7 +363,10 @@
             codes.add(prefix);
         });
 
+        // เคลียร์ค่าและเลือกทั้งหมดเป็นค่าเริ่มต้น
         if (isInitialFilterLoad) {
+            selectedSummaryStatuses.clear();
+            selectedSummaryCodes.clear();
             statuses.forEach(st => selectedSummaryStatuses.add(st));
             codes.forEach(cd => selectedSummaryCodes.add(cd));
             isInitialFilterLoad = false;
