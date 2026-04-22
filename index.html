@@ -200,7 +200,7 @@
   </div>
 
   <script>
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyyQjhhMU6l_4lZDy-pQU_BYd4lQuS0G4OxwqBcSxtcxxurrOBuiJYTwCZkWwsh3EWu/exec'; 
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzaP-UOtYDz7xkSclx4cvHMedHV6CCrMzzwQbr91EufS3e_pCFYtEXslB7NzuOqo_vX/exec'; 
 
     let globalDetails = [];
     let loggedInEmpCode = ''; 
@@ -208,17 +208,14 @@
     let searchTimeout = null;
     let pendingRowIndex = null, pendingStatusValue = null, pendingSelectElement = null; 
 
-    // ตัวแปรเก็บสถานะเช็คบ็อกซ์และแฟล็กตรวจจับการโหลดครั้งแรก
     let selectedSummaryStatuses = new Set();
     let selectedSummaryCodes = new Set();
     let isInitialFilterLoad = true;
 
-    // ตัวแปรสำหรับเก็บ Instance ของกราฟ
     let barChartInst = null;
     let pieChartInst = null;
     let lineChartInst = null;
 
-    // ปิด Dropdown เมื่อคลิกพื้นที่อื่น
     document.addEventListener('click', function(event) {
         const statusMenu = document.getElementById('statusMenu');
         const empCodeMenu = document.getElementById('empCodeMenu');
@@ -337,7 +334,6 @@
                 globalDetails = data.details || [];
                 
                 populateSummaryFilters();
-                
                 applySummaryFilter();
                 prepareGroupingData();
             })
